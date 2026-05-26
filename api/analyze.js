@@ -320,7 +320,7 @@ const SYSTEM_PROMPT = `당신은 자평명리학 기반의 RPG 스탯 변환 엔
   "calc_notes": "적용된 주요 규칙 요약 (예: '신약패널티+목결핍+쌍충')"
 }`;
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
