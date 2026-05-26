@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>팔자길드 — 내 팔자, 전략으로 바꾼다</title>
+<meta name="description" content="생년월일로 나만의 RPG 스탯 카드를 발급받고, 파티 시너지와 오늘의 운세까지 확인하세요.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f0e0c;--sur:#1a1916;--sur2:#242220;--bdr:rgba(255,255,255,.08);--bdr2:rgba(255,255,255,.15);--gold:#d4a847;--gdim:#a07832;--txt:#e8e4da;--txt2:#9a9488;--txt3:#5a5650;--red:#c45c3a;--green:#4a8c5c;--blue:#3a6a9c;--r:10px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:'Noto Sans KR',sans-serif;min-height:100vh}
+
+.hero{text-align:center;padding:2.5rem 1.5rem 1.5rem;border-bottom:1px solid var(--bdr)}
+.hero-symbol{font-size:36px;margin-bottom:.5rem}
+.hero-title{font-family:'Noto Serif KR',serif;font-size:24px;color:var(--gold)}
+.hero-sub{font-size:12px;color:var(--txt2);margin-top:5px}
+.hero-beta{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;border:1px solid var(--gdim);color:var(--gdim);margin-top:8px}
+
+.tab-wrap{display:flex;border-bottom:1px solid var(--bdr);overflow-x:auto}
+.tab{flex:1;min-width:80px;padding:11px 6px;text-align:center;font-size:12px;color:var(--txt2);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.tab.on{color:var(--gold);border-bottom-color:var(--gold)}
+.panel{display:none;padding:1.25rem;max-width:560px;margin:0 auto}
+.panel.on{display:block}
+
+label{display:block;font-size:11px;font-weight:500;color:var(--txt2);letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px}
+input,select{width:100%;padding:10px 12px;background:var(--sur);border:1px solid var(--bdr2);border-radius:var(--r);color:var(--txt);font-size:14px;font-family:'Noto Sans KR';outline:none;transition:border-color .2s}
+input:focus,select:focus{border-color:var(--gdim)}
+input::placeholder{color:var(--txt3)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.g3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}
+.fg{margin-bottom:14px}
+
+.btn{width:100%;padding:13px;background:var(--gold);border:none;border-radius:var(--r);color:#0f0e0c;font-size:14px;font-weight:700;font-family:'Noto Sans KR';cursor:pointer;transition:opacity .2s;margin-top:4px}
+.btn:hover{opacity:.85}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-ghost{width:100%;padding:10px;background:transparent;border:1px solid var(--bdr2);border-radius:var(--r);color:var(--txt2);font-size:13px;font-family:'Noto Sans KR';cursor:pointer;margin-top:8px;transition:all .2s}
+.btn-ghost:hover{border-color:var(--gdim);color:var(--gold)}
+
+.loading{text-align:center;padding:2.5rem}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.2s ease-in-out infinite;margin:0 3px}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes pulse{0%,80%,100%{opacity:.3}40%{opacity:1}}
+
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden;margin-bottom:10px}
+.ch{background:var(--sur2);border-bottom:1px solid var(--bdr);padding:.875rem 1.25rem}
+.cb{padding:.875rem 1.25rem}
+
+.cls-cat{font-size:11px;color:var(--gdim);letter-spacing:.06em;text-transform:uppercase}
+.cls-name{font-family:'Noto Serif KR',serif;font-size:17px;color:var(--gold);margin:3px 0 6px}
+.tags{display:flex;gap:5px;flex-wrap:wrap}
+.tg{font-size:10px;padding:2px 7px;border-radius:20px;border:1px solid var(--bdr2);color:var(--txt2)}
+.tg-g{border-color:#4a8c5c!important;color:#4a8c5c!important;background:rgba(74,140,92,.1)}
+.tg-r{border-color:#c45c5c!important;color:#c45c5c!important;background:rgba(196,92,92,.1)}
+
+.pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:.875rem}
+.pil{text-align:center}
+.pl{font-size:10px;color:var(--txt3);margin-bottom:3px}
+.pc{display:flex;justify-content:center;gap:3px}
+.pch{width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;border-radius:4px;border:1px solid var(--bdr);background:var(--sur2);color:var(--txt)}
+.pch-m{background:rgba(212,168,71,.15);border-color:var(--gdim);color:var(--gold)}
+.ps{font-size:10px;color:var(--txt3);margin-top:3px}
+
+.stat-ttl{font-size:11px;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+.sr{display:flex;align-items:center;gap:7px;margin-bottom:8px}
+.sn{font-size:12px;color:var(--txt2);width:58px;flex-shrink:0}
+.sbg{flex:1;height:5px;background:var(--sur2);border-radius:3px;overflow:hidden}
+.sf{height:100%;border-radius:3px;transition:width 1s ease}
+.sv{font-size:12px;font-weight:700;color:var(--txt);width:24px;text-align:right;flex-shrink:0}
+.stg{font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid var(--bdr);color:var(--txt2);white-space:nowrap}
+
+.tot-wrap{border-top:1px solid var(--bdr);padding-top:.875rem;margin-top:.5rem}
+.tot-row{display:flex;justify-content:space-between;font-size:11px;color:var(--txt2);margin-bottom:5px}
+.tot-bar{height:6px;background:var(--sur2);border-radius:3px;overflow:hidden}
+.tot-fill{height:100%;border-radius:3px}
+.grs{display:flex;gap:4px;margin-top:7px;align-items:center;justify-content:space-between}
+.gr{font-size:11px;padding:2px 9px;border-radius:4px;border:1px solid var(--bdr);color:var(--txt3)}
+.gr.on{font-weight:700}
+
+.ftr{border-top:1px solid var(--bdr);display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:.75rem 1.25rem;background:var(--sur2)}
+.fl{font-size:10px;color:var(--txt3);text-transform:uppercase;margin-bottom:2px}
+.fv{font-size:12px;color:var(--txt)}
+
+/* 귀신 카드 */
+.ghost-card{border-radius:var(--r);overflow:hidden;border:1px solid var(--bdr);margin-bottom:8px}
+.ghost-head{padding:.75rem 1rem;display:flex;align-items:center;gap:10px}
+.ghost-emoji{font-size:28px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid;flex-shrink:0}
+.ghost-info .ghost-name{font-family:'Noto Serif KR',serif;font-size:15px;font-weight:600}
+.ghost-info .ghost-desc{font-size:11px;margin-top:2px}
+.ghost-body{padding:.5rem 1rem .75rem;border-top:1px solid var(--bdr);font-size:12px;color:var(--txt2);line-height:1.6}
+.ghost-tags{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+.ghost-tag{font-size:10px;padding:2px 7px;border-radius:20px;border:1px solid;background:transparent}
+
+/* 포메이션 */
+.form-card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:.875rem 1.25rem;margin-bottom:8px}
+.form-name{font-family:'Noto Serif KR',serif;font-size:14px;color:var(--gold);margin-bottom:4px}
+.form-cond{font-size:11px;color:var(--txt2);margin-bottom:6px}
+.form-buffs{display:flex;gap:5px;flex-wrap:wrap}
+.form-buff{font-size:11px;padding:2px 7px;border-radius:3px;background:rgba(74,140,92,.15);color:#6dbf84;border:1px solid rgba(74,140,92,.3)}
+
+/* 오행 피커 */
+.el-pick{display:flex;gap:6px}
+.elb{flex:1;padding:8px 4px;border-radius:8px;border:1px solid var(--bdr);background:var(--sur);color:var(--txt2);cursor:pointer;font-size:12px;text-align:center;transition:all .15s}
+.elb.on{font-weight:700}
+
+/* 피드백 */
+.star-row{display:flex;gap:8px;margin:10px 0;justify-content:center}
+.star-btn{font-size:24px;cursor:pointer;opacity:.4;transition:opacity .2s;background:none;border:none}
+.star-btn.on,.star-btn:hover{opacity:1}
+.err{background:rgba(196,92,58,.15);border:1px solid rgba(196,92,58,.3);border-radius:var(--r);padding:10px 14px;font-size:13px;color:#e08060;margin-top:8px}
+.ok{background:rgba(74,140,92,.15);border:1px solid rgba(74,140,92,.3);border-radius:var(--r);padding:10px 14px;font-size:13px;color:#6dbf84;margin-top:8px}
+
+footer{text-align:center;padding:2rem;font-size:11px;color:var(--txt3);border-top:1px solid var(--bdr);margin-top:2rem}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-symbol">🏰</div>
+  <h1 class="hero-title">팔자길드</h1>
+  <p class="hero-sub">내 팔자, 전략으로 바꾼다</p>
+  <span class="hero-beta">BETA v1.0 · 공식 v2.3 · 46케이스 검증</span>
+</div>
+
+<div class="tab-wrap">
+  <div class="tab on" onclick="sw(0)">⚔️ 스탯 카드</div>
+  <div class="tab" onclick="sw(1)">👹 오늘의 전투</div>
+  <div class="tab" onclick="sw(2)">👻 귀신 도감</div>
+  <div class="tab" onclick="sw(3)">🔮 파티 포메이션</div>
+  <div class="tab" onclick="sw(4)">✨ 파티 시너지</div>
+  <div class="tab" onclick="sw(5)">📝 피드백</div>
+</div>
+
+<!-- 탭 0: 스탯 카드 -->
+<div id="t0" class="panel on">
+  <div id="form-sec">
+    <div class="fg"><label>이름</label><input id="i-name" placeholder="홍길동" maxlength="10"></div>
+    <div class="fg">
+      <label>성별</label>
+      <div class="g2">
+        <button class="btn-ghost" id="btn-m" onclick="setGender('남',this)" style="background:rgba(212,168,71,.1);border-color:var(--gdim);color:var(--gold)">남</button>
+        <button class="btn-ghost" id="btn-f" onclick="setGender('여',this)">여</button>
+      </div>
+    </div>
+    <div class="fg">
+      <label>생년월일 (양력)</label>
+      <div class="g3">
+        <input id="i-y" type="number" placeholder="1989" min="1920" max="2024">
+        <input id="i-m" type="number" placeholder="3" min="1" max="12">
+        <input id="i-d" type="number" placeholder="30" min="1" max="31">
+      </div>
+      <div class="g3" style="margin-top:3px">
+        <span style="font-size:10px;color:var(--txt3);padding-left:2px">년도</span>
+        <span style="font-size:10px;color:var(--txt3);padding-left:2px">월</span>
+        <span style="font-size:10px;color:var(--txt3);padding-left:2px">일</span>
+      </div>
+    </div>
+    <div class="fg">
+      <label>출생 시간</label>
+      <select id="i-h">
+        <option value="자시">자시 (23:00~01:00)</option>
+        <option value="축시">축시 (01:00~03:00)</option>
+        <option value="인시">인시 (03:00~05:00)</option>
+        <option value="묘시">묘시 (05:00~07:00)</option>
+        <option value="진시">진시 (07:00~09:00)</option>
+        <option value="사시">사시 (09:00~11:00)</option>
+        <option value="오시" selected>오시 (11:00~13:00)</option>
+        <option value="미시">미시 (13:00~15:00)</option>
+        <option value="신시">신시 (15:00~17:00)</option>
+        <option value="유시">유시 (17:00~19:00)</option>
+        <option value="술시">술시 (19:00~21:00)</option>
+        <option value="해시">해시 (21:00~23:00)</option>
+      </select>
+      <div style="font-size:11px;color:var(--txt3);margin-top:4px">모르면 오시(낮 12시 전후)로 선택</div>
+    </div>
+    <button class="btn" id="btn-go" onclick="analyze()">⚔️ 스탯 카드 발급</button>
+    <div id="err-msg"></div>
+  </div>
+  <div id="load-sec" style="display:none"><div class="loading"><div style="font-size:13px;color:var(--txt2);margin-bottom:12px">사주 분석 중...</div><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
+  <div id="res-sec" style="display:none"></div>
+</div>
+
+<!-- 탭 1: 전투 -->
+<div id="t1" class="panel">
+  <div id="bt-setup">
+    <div style="font-family:'Noto Serif KR',serif;font-size:18px;color:var(--gold);text-align:center;margin-bottom:.5rem">👹 오늘의 전투</div>
+    <div style="font-size:12px;color:var(--txt2);text-align:center;margin-bottom:1.25rem;line-height:1.6">오늘의 일진에 맞는 귀신이 나타납니다.<br>사주의 기신 귀신을 물리치고 오늘 운세를 지켜내세요!</div>
+    <div class="fg"><label>내 이름</label><input id="bt-name" placeholder="홍길동"></div>
+    <div class="fg">
+      <label>내 일간 오행</label>
+      <div class="el-pick" id="bt-pick" style="margin-top:5px"></div>
+    </div>
+    <div style="background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:.75rem 1rem;margin-bottom:14px">
+      <div id="bt-today-info" style="font-size:12px;color:var(--txt2);line-height:1.7"></div>
+    </div>
+    <div id="bt-remain-msg" style="text-align:center;font-size:12px;margin-bottom:8px"></div>
+    <button class="btn" id="bt-start-btn" onclick="startBattle()">⚔️ 전투 시작</button>
+  </div>
+
+  <div id="bt-fight" style="display:none">
+    <div id="bt-ghost-intro" style="background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:1.25rem;text-align:center;margin-bottom:12px">
+      <div id="bt-ghost-emoji" style="font-size:52px;margin-bottom:.5rem"></div>
+      <div id="bt-ghost-name" style="font-family:'Noto Serif KR',serif;font-size:16px;color:#c45c3a;margin-bottom:.25rem"></div>
+      <div id="bt-ghost-quote" style="font-size:13px;color:var(--txt2);line-height:1.6;font-style:italic"></div>
+    </div>
+    <div id="bt-rounds" style="margin-bottom:12px"></div>
+    <button class="btn" id="bt-fight-btn" onclick="nextRound()">▶ 다음</button>
+  </div>
+
+  <div id="bt-result" style="display:none">
+    <div id="bt-result-card" style="background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:1.25rem;text-align:center;margin-bottom:12px">
+      <div id="bt-result-emoji" style="font-size:52px;margin-bottom:.5rem"></div>
+      <div id="bt-result-title" style="font-family:'Noto Serif KR',serif;font-size:20px;margin-bottom:.5rem"></div>
+      <div id="bt-result-desc" style="font-size:13px;color:var(--txt2);line-height:1.6"></div>
+    </div>
+    <div id="bt-buffs" style="background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:.875rem 1.25rem;margin-bottom:12px"></div>
+    <div id="bt-remain-final" style="text-align:center;font-size:12px;color:var(--txt2);margin-bottom:8px"></div>
+    <button class="btn-ghost" onclick="resetBattle()">← 처음으로</button>
+  </div>
+</div>
+
+<!-- 탭 1: 귀신 도감 -->
+<div id="t3" class="panel">
+  <div style="font-size:13px;color:var(--txt2);margin-bottom:1rem;line-height:1.6">
+    사주의 기신(忌神)은 나를 괴롭히는 오행입니다.<br>
+    팔자길드에서는 이를 <span style="color:var(--gold)">한국형 귀신 캐릭터</span>로 시각화합니다.
+  </div>
+  <div id="ghost-list"></div>
+</div>
+
+<!-- 탭 2: 파티 포메이션 -->
+<div id="t3" class="panel">
+  <div style="font-size:13px;color:var(--txt2);margin-bottom:1rem;line-height:1.6">
+    특정 오행 조합으로 파티를 구성하면 <span style="color:var(--gold)">특수 포메이션</span>이 발동합니다.
+  </div>
+  <div id="form-list"></div>
+</div>
+
+<!-- 탭 3: 파티 시너지 -->
+<div id="t5" class="panel">
+  <div class="card">
+    <div class="ch"><div style="font-size:13px;font-weight:500">✨ 파티 시너지 계산기</div><div style="font-size:11px;color:var(--txt2);margin-top:2px">두 사람의 일간 오행을 선택하세요</div></div>
+    <div class="cb">
+      <div class="fg"><label>첫 번째</label><input id="s-na" placeholder="이름 A"></div>
+      <label>오행 A</label>
+      <div class="el-pick" id="pickA" style="margin-top:5px;margin-bottom:14px"></div>
+      <div class="fg"><label>두 번째</label><input id="s-nb" placeholder="이름 B"></div>
+      <label>오행 B</label>
+      <div class="el-pick" id="pickB" style="margin-top:5px;margin-bottom:14px"></div>
+      <button class="btn" onclick="calcSyn()">✨ 시너지 계산</button>
+    </div>
+  </div>
+  <div id="syn-res"></div>
+</div>
+
+<!-- 탭 4: 피드백 -->
+<div id="t5" class="panel">
+  <div class="card">
+    <div class="ch"><div style="font-size:13px;font-weight:500">이 결과가 나와 얼마나 맞나요?</div><div style="font-size:11px;color:var(--txt2);margin-top:2px">팔자길드 공식 개선에 직접 반영됩니다</div></div>
+    <div class="cb">
+      <div class="star-row" id="star-row"><button class="star-btn" onclick="setStar(1)">★</button><button class="star-btn" onclick="setStar(2)">★</button><button class="star-btn" onclick="setStar(3)">★</button><button class="star-btn" onclick="setStar(4)">★</button><button class="star-btn" onclick="setStar(5)">★</button></div>
+      <div class="fg"><label>가장 잘 맞은 스탯</label><input id="fb-b" placeholder="예: 통찰력이 정확했어요"></div>
+      <div class="fg"><label>틀린 부분</label><input id="fb-w" placeholder="예: 추진력이 너무 낮아요"></div>
+      <button class="btn" onclick="submitFb()">피드백 보내기</button>
+      <div id="fb-res"></div>
+    </div>
+  </div>
+  <div style="font-size:11px;color:var(--txt3);text-align:center;margin-top:12px;line-height:1.6">수집된 데이터는 팔자길드 스탯 공식 개선에만 사용됩니다.</div>
+</div>
+
+<footer>🏰 팔자길드 베타 — 공식 v2.3 · 46케이스 검증</footer>
+
+<script>
+// ── 상태
+let gender="남", starRating=0, lastResult=null;
+let selA="토", selB="화";
+
+// ── 오행
+const EL={
+  목:{e:"🌿",sc:"#4a8c5c",bg:"rgba(74,140,92,.15)",bc:"rgba(74,140,92,.4)",label:"목(木)"},
+  화:{e:"🔥",sc:"#c45c3a",bg:"rgba(196,92,58,.15)",bc:"rgba(196,92,58,.4)",label:"화(火)"},
+  토:{e:"🏔️",sc:"#a07832",bg:"rgba(160,120,50,.15)",bc:"rgba(160,120,50,.4)",label:"토(土)"},
+  금:{e:"⚔️",sc:"#3a6a9c",bg:"rgba(58,106,156,.15)",bc:"rgba(58,106,156,.4)",label:"금(金)"},
+  수:{e:"💧",sc:"#3a7a9c",bg:"rgba(58,122,156,.15)",bc:"rgba(58,122,156,.4)",label:"수(水)"}
+};
+
+// ── 귀신 도감 (5오행 × 기신/용신)
+const GHOSTS=[
+  {el:"목",ksin_name:"청목귀(靑木鬼)",ksin_sub:"나무귀신·목도령",ksin_emoji:"🌲",ksin_color:"#3d7a4a",
+   ksin_weak:"금(金) 오행",ksin_desc:"원한을 품고 숲 속을 떠도는 원귀. 목(木) 기신인 사람에게 우유부단함과 우울감을 불어넣는다.",
+   ksin_tags:["추진력 저하","창의력 왜곡","인간관계 집착"],
+   yonsin_name:"청룡(靑龍)",yonsin_emoji:"🐉",yonsin_desc:"동방의 수호신. 나무의 생명력으로 주인을 지키며 새로운 길을 개척하게 돕는다.",
+   ksin_hint:"목(木) 기신이라면: 계획을 세워도 실행 못 하는 패턴, 인간관계에 과도하게 얽히는 경향 확인"},
+  {el:"화",ksin_name:"화귀(火鬼)",ksin_sub:"불귀신·도깨비불",ksin_emoji:"🔥",ksin_color:"#b54a28",
+   ksin_weak:"수(水) 오행",ksin_desc:"저주받은 불꽃이 사람의 열정을 태워버리는 귀신. 화(火) 기신인 사람에게 충동, 분노, 과소비를 유발한다.",
+   ksin_tags:["충동적 결정","감정 폭발","과소비 습관"],
+   yonsin_name:"봉황(鳳凰)",yonsin_emoji:"🦅",yonsin_desc:"남방의 수호신. 불꽃의 열정을 올바른 방향으로 이끌어 창의력과 명예를 빛낸다.",
+   ksin_hint:"화(火) 기신이라면: 후회할 충동 결정, 인간관계에서 감정 폭발 후 자책하는 패턴 확인"},
+  {el:"토",ksin_name:"무덤귀신(地鬼)",ksin_sub:"지박령·무덤귀신",ksin_emoji:"⛰️",ksin_color:"#8a6030",
+   ksin_weak:"목(木) 오행",ksin_desc:"한곳에 틀어박혀 변화를 거부하는 귀신. 토(土) 기신인 사람에게 과도한 안주, 변화 공포, 보수적 집착을 심는다.",
+   ksin_tags:["변화 거부","보수적 집착","기회 손실"],
+   yonsin_name:"삼신할머니(三神)",yonsin_emoji:"👵",yonsin_desc:"생명과 운명의 수호신. 땅의 안정감으로 뿌리를 깊게 내리게 하고 결실을 맺게 돕는다.",
+   ksin_hint:"토(土) 기신이라면: 기회가 와도 움직이지 못하는 패턴, 변화를 극도로 두려워하는 경향 확인"},
+  {el:"금",ksin_name:"도깨비(鐵鬼)",ksin_sub:"쇳귀신·도깨비",ksin_emoji:"👺",ksin_color:"#2a5a8c",
+   ksin_weak:"화(火) 오행",ksin_desc:"날카로운 방망이로 인간의 의욕을 꺾는 도깨비. 금(金) 기신인 사람에게 과도한 비판, 차가운 냉소, 대인관계 단절을 만든다.",
+   ksin_tags:["냉소적 태도","대인 단절","비판적 집착"],
+   yonsin_name:"백호(白虎)",yonsin_emoji:"🐅",yonsin_desc:"서방의 수호신. 쇠의 날카로움을 정밀함과 결단력으로 승화시켜 목표를 향해 전진하게 한다.",
+   ksin_hint:"금(金) 기신이라면: 자신과 타인에게 지나치게 엄격한 기준, 인간관계에서 차갑게 단절하는 패턴 확인"},
+  {el:"수",ksin_name:"이무기(蛟鬼)",ksin_sub:"물귀신·이무기",ksin_emoji:"🐍",ksin_color:"#1a6a7a",
+   ksin_weak:"토(土) 오행",ksin_desc:"용이 되지 못한 이무기. 수(水) 기신인 사람에게 불안, 강박, 방향 없는 흐름을 만들고 현실 도피를 유발한다.",
+   ksin_tags:["만성 불안","방향 상실","현실 도피"],
+   yonsin_name:"용왕(龍王)",yonsin_emoji:"🐲",yonsin_desc:"북방의 수호신. 물의 유연함과 깊은 통찰로 어떤 환경에도 적응하고 지혜롭게 흐르게 돕는다.",
+   ksin_hint:"수(水) 기신이라면: 과도한 걱정과 불안, 결정 앞에서 계속 미루는 패턴 확인"}
+];
+
+// ── 포메이션 시스템
+const FORMATIONS=[
+  {name:"오행상생진(五行相生陣)",cond_text:"목·화·토·금·수 각 1명",cond:[1,1,1,1,1],emoji:"⭐",
+   buffs:["전원 모든 스탯 +20","귀신 약점 노출 +30%"],
+   desc:"완벽한 오행 순환. 상생의 고리가 완성되어 파티 전체가 시너지를 극대화한다.",grade:"SS"},
+  {name:"화토금 공격진",cond_text:"화 1+ · 토 2+ · 금 1+",cond_fn:e=>e["화"]>=1&&e["토"]>=2&&e["금"]>=1,emoji:"⚔️",
+   buffs:["사업감각 +25","리스크관리 +20","불귀신 저항 +40%"],
+   desc:"화생토, 토생금의 흐름이 물질적 성취를 극대화한다. 현실적 결과물에 강한 공격형 조합.",grade:"A"},
+  {name:"수목화 창조진",cond_text:"수 1+ · 목 2+ · 화 1+",cond_fn:e=>e["수"]>=1&&e["목"]>=2&&e["화"]>=1,emoji:"🎨",
+   buffs:["창의력 +25","통찰력 +20","나무귀신 저항 +40%"],
+   desc:"수생목, 목생화의 흐름으로 창의력이 폭발하는 예술형 조합.",grade:"A"},
+  {name:"금수목 지혜진",cond_text:"금 1+ · 수 2+ · 목 1+",cond_fn:e=>e["금"]>=1&&e["수"]>=2&&e["목"]>=1,emoji:"🔮",
+   buffs:["통찰력 +25","학습력 +20","이무기 저항 +40%"],
+   desc:"금생수, 수생목의 흐름으로 깊은 분석과 통찰이 빛나는 지혜형 조합.",grade:"A"},
+  {name:"토 순혈진(바위산)",cond_text:"토 일간 3명 이상",cond_fn:e=>e["토"]>=3,emoji:"🏔️",
+   buffs:["지속력 +30","리스크관리 +25","무덤귀신 저항 +50%"],
+   desc:"안정성이 압도적이지만 역동성 부족. 수비형 최강 조합. 화 기운 파티원 합류 시 폭발적 상승.",grade:"B"},
+  {name:"화 열정진",cond_text:"화 일간 2명 이상",cond_fn:e=>e["화"]>=2,emoji:"🔥",
+   buffs:["대인매력 +20","창의력 +15","화귀 저항 +30%"],
+   desc:"화(火) 에너지가 넘치는 열정형 파티. 스타트업·무대·영업에 최적.",grade:"B"},
+  {name:"금 냉철진",cond_text:"금 일간 2명 이상",cond_fn:e=>e["금"]>=2,emoji:"⚔️",
+   buffs:["리스크관리 +25","학습력 +20","도깨비 저항 +35%"],
+   desc:"냉철한 분석이 두 배로 강화되는 전략형 조합. 협상·법무·투자에 강함.",grade:"B"},
+  {name:"수 통찰진",cond_text:"수 일간 2명 이상",cond_fn:e=>e["수"]>=2,emoji:"💧",
+   buffs:["통찰력 +20","학습력 +18","이무기 저항 +30%"],
+   desc:"지혜가 두 배로 증폭되는 연구형 조합. 분석·기획·학문에 탁월.",grade:"B"},
+  {name:"목 개척진",cond_text:"목 일간 2명 이상",cond_fn:e=>e["목"]>=2,emoji:"🌿",
+   buffs:["추진력 +20","창의력 +15","청목귀 저항 +30%"],
+   desc:"돌파력과 개척 정신이 배가되는 선봉대 조합.",grade:"B"},
+  {name:"화생토 상생 듀오",cond_text:"화 1명 + 토 1명 (2인 파티)",cond_fn:e=>Object.values(e).reduce((a,b)=>a+b,0)===2&&e["화"]===1&&e["토"]===1,emoji:"♻️",
+   buffs:["대인매력 +15","지속력 +10","상생 시너지 +20%"],
+   desc:"화(火)가 토(土)에게 에너지를 공급하는 완벽한 상생 듀오. 부부·파트너·멘토-멘티 관계의 이상형.",grade:"A"}
+];
+
+// ── 파티 시너지
+const BIRTH={"목→화":{recv:{추진력:15,창의력:12},give:{대인매력:8},score:81,lbl:"점화 공급형"},"화→토":{recv:{대인매력:15,창의력:10},give:{지속력:10,리스크관리:8},score:81,lbl:"에너지 공급형"},"토→금":{recv:{지속력:15,리스크관리:10},give:{학습력:10},score:80,lbl:"안정 지원형"},"금→수":{recv:{리스크관리:15,학습력:10},give:{통찰력:8},score:80,lbl:"정제 공급형"},"수→목":{recv:{통찰력:15,학습력:10},give:{추진력:8},score:80,lbl:"자양 공급형"}};
+const CLASH={"목→토":{victim:{지속력:-12,리스크관리:-8},atk:{추진력:-5},score:36,lbl:"자극형"},"화→금":{victim:{리스크관리:-12,학습력:-8},atk:{대인매력:-5},score:36,lbl:"용해형"},"토→수":{victim:{통찰력:-12,학습력:-8},atk:{지속력:-5},score:36,lbl:"차단형"},"수→화":{victim:{대인매력:-12,창의력:-8},atk:{통찰력:-5},score:36,lbl:"냉각형"},"금→목":{victim:{추진력:-12,창의력:-8},atk:{리스크관리:-5},score:36,lbl:"절단형"}};
+const EL_STATS={목:["추진력","창의력"],화:["대인매력","창의력"],토:["지속력","리스크관리"],금:["리스크관리","학습력"],수:["통찰력","학습력"]};
+
+function getRel(a,b){if(a===b){const bufs=Object.fromEntries(EL_STATS[a].map(s=>[s,10]).concat([["추진력",-5]]));return{type:"비화",score:62,lbl:"경쟁협력형",bufA:{...bufs},bufB:{...bufs}};}const k=`${a}→${b}`,kr=`${b}→${a}`;if(BIRTH[k])return{type:"상생",score:BIRTH[k].score,lbl:BIRTH[k].lbl,bufA:BIRTH[k].give,bufB:BIRTH[k].recv};if(BIRTH[kr])return{type:"상생",score:BIRTH[kr].score,lbl:BIRTH[kr].lbl,bufA:BIRTH[kr].recv,bufB:BIRTH[kr].give};if(CLASH[k])return{type:"상극",score:CLASH[k].score,lbl:CLASH[k].lbl,bufA:CLASH[k].atk,bufB:CLASH[k].victim};if(CLASH[kr])return{type:"상극",score:CLASH[kr].score,lbl:CLASH[kr].lbl,bufA:CLASH[kr].victim,bufB:CLASH[kr].atk};return{type:"중성",score:55,lbl:"중립형",bufA:{},bufB:{}};}
+
+// ── 탭 전환
+function sw(i){document.querySelectorAll(".tab").forEach((t,j)=>t.classList.toggle("on",i===j));document.querySelectorAll(".panel").forEach((p,j)=>p.classList.toggle("on",i===j));if(i===1){initBattle();}}
+
+// ── 성별
+function setGender(g,el){gender=g;["btn-m","btn-f"].forEach(id=>{const b=document.getElementById(id);b.style.background="transparent";b.style.borderColor="var(--bdr2)";b.style.color="var(--txt2)"});el.style.background="rgba(212,168,71,.1)";el.style.borderColor="var(--gdim)";el.style.color="var(--gold)";}
+
+// ── 스탯 카드 발급
+async function analyze(){
+  const name=document.getElementById("i-name").value.trim();
+  const year=document.getElementById("i-y").value;
+  const month=document.getElementById("i-m").value;
+  const day=document.getElementById("i-d").value;
+  const hour=document.getElementById("i-h").value;
+  const err=document.getElementById("err-msg");
+  err.innerHTML="";
+  if(!name||!year||!month||!day){err.innerHTML='<div class="err">이름과 생년월일을 입력해주세요.</div>';return;}
+  document.getElementById("form-sec").style.display="none";
+  document.getElementById("load-sec").style.display="block";
+  try{
+    const res=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,year,month,day,hour,gender})});
+    const json=await res.json();
+    if(!json.success)throw new Error(json.error||"분석 실패");
+    lastResult=json.data;
+    showResult(json.data);
+  }catch(e){document.getElementById("load-sec").style.display="none";document.getElementById("form-sec").style.display="block";err.innerHTML=`<div class="err">오류: ${e.message}</div>`;}
+}
+
+function showResult(d){
+  document.getElementById("load-sec").style.display="none";
+  const sec=document.getElementById("res-sec");sec.style.display="block";
+  const stats=Object.entries(d.stats).sort((a,b)=>b[1].value-a[1].value);
+  const total=d.total_power;const grade=d.potential_grade;
+  const gc={S:"#4a8c5c",A:"#3a6a9c",B:"#a07832",C:"#c45c5c"}[grade]||"#6b7280";
+  const bc=v=>v>=80?"#4a8c5c":v>=65?"#3a6a9c":v>=52?"#a07832":"#5a5650";
+  const pilH=(d.pillars?Object.entries(d.pillars):[]). map(([k,v],i)=>{const cs=v.split("");return`<div class="pil"><div class="pl">${["년주","월주","일주","시주"][i]||k}</div><div class="pc"><div class="pch ${i===2?"pch-m":""}">${cs[0]||"?"}</div><div class="pch">${cs[1]||"?"}</div></div></div>`;}).join("");
+  const statH=stats.map(([n,s])=>`<div class="sr"><span class="sn">${n}</span><div class="sbg"><div class="sf" style="width:0%;background:${bc(s.value)}" data-t="${s.value}"></div></div><span class="sv">${s.value}</span><span class="stg">${s.tag}</span></div>`).join("");
+  const grH=["C","B","A","S"].map(g=>`<span class="gr ${g===grade?"on":""}" style="${g===grade?`color:${gc};border-color:${gc};background:${gc}1a`:""}">${g}</span>`).join("");
+  sec.innerHTML=`<div class="card"><div class="ch"><div class="cls-cat">${d.class_main}</div><div class="cls-name">${d.class_sub}</div><div style="font-size:12px;color:var(--txt2);margin-bottom:6px">${d.ilgan}(${d.ilgan_element}) · ${d.geokguk}</div><div class="tags"><span class="tg tg-g">${d.element_primary} 속성</span>${d.sinjak?'<span class="tg tg-r">신약</span>':""}</div></div><div class="cb"><div class="pillars">${pilH}</div><div class="stat-ttl">Base Stats — v2.3</div>${statH}<div class="tot-wrap"><div class="tot-row"><span>종합 전투력</span><span style="font-weight:700;color:var(--txt)">${total} / 100</span></div><div class="tot-bar"><div class="tot-fill" style="width:${total}%;background:${bc(total)}"></div></div><div class="grs"><div style="display:flex;gap:4px">${grH}</div><span style="font-size:11px;color:var(--txt2)">잠재력 ${grade} (${d.top2_avg})</span></div></div></div></div><div class="card"><div class="cb"><div class="ftr" style="padding:0"><div><div class="fl">숨겨진 능력</div><div class="fv">${d.hidden_ability}</div></div><div><div class="fl">치명적 약점</div><div class="fv">${d.weakness}</div></div><div><div class="fl">시너지 오행</div><div class="fv">${d.synergy_element}</div></div><div><div class="fl">적용 규칙</div><div class="fv" style="font-size:11px;color:var(--txt2)">${d.calc_notes}</div></div></div></div></div><button class="btn-ghost" onclick="resetForm()">← 다시 입력</button><button class="btn" style="margin-top:8px" onclick="sw(4)">📝 이 결과 피드백 남기기</button>`;
+  setTimeout(()=>{sec.querySelectorAll(".sf").forEach(el=>{el.style.width=el.dataset.t+"%"});},100);
+}
+
+function resetForm(){document.getElementById("res-sec").style.display="none";document.getElementById("form-sec").style.display="block";document.getElementById("err-msg").innerHTML="";}
+
+// ── 귀신 도감 렌더링
+const ghostEl=document.getElementById("ghost-list");
+GHOSTS.forEach(g=>{
+  const c=EL[g.el];
+  ghostEl.innerHTML+=`<div class="ghost-card" style="border-color:${c.bc}">
+    <div class="ghost-head" style="background:${c.bg}">
+      <div class="ghost-emoji" style="border-color:${c.bc};color:${g.ksin_color}">${g.ksin_emoji}</div>
+      <div class="ghost-info">
+        <div class="ghost-name" style="color:${g.ksin_color}">${g.ksin_name}</div>
+        <div class="ghost-desc" style="color:var(--txt2)">${g.ksin_sub} · 기신 오행: ${c.label}</div>
+      </div>
+      <div style="margin-left:auto;font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid ${c.bc};color:${c.sc};background:${c.bg}">약점: ${g.ksin_weak}</div>
+    </div>
+    <div class="ghost-body">
+      <div>${g.ksin_desc}</div>
+      <div class="ghost-tags">${g.ksin_tags.map(t=>`<span class="ghost-tag" style="border-color:${c.bc};color:${c.sc}">${t}</span>`).join("")}</div>
+      <div style="margin-top:8px;padding:7px 10px;background:rgba(212,168,71,.05);border-radius:6px;border:1px solid rgba(212,168,71,.15)">
+        <span style="font-size:10px;color:var(--gdim);margin-right:4px">💡 자가 진단</span><span style="font-size:11px;color:var(--txt2)">${g.ksin_hint}</span>
+      </div>
+    </div>
+    <div style="padding:.5rem 1rem .75rem;border-top:1px solid var(--bdr)">
+      <div style="font-size:11px;color:var(--gdim);margin-bottom:4px">🛡️ 수호신</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:20px">${g.yonsin_emoji}</span>
+        <div><div style="font-size:13px;font-weight:500;color:var(--gold)">${g.yonsin_name}</div><div style="font-size:11px;color:var(--txt2);margin-top:1px">${g.yonsin_desc}</div></div>
+      </div>
+    </div>
+  </div>`;
+});
+
+// ── 포메이션 렌더링
+const formEl=document.getElementById("form-list");
+const gradeColor={SS:"#c0a020",A:"#4a8c5c",B:"#3a6a9c"};
+FORMATIONS.forEach(f=>{
+  const gc=gradeColor[f.grade]||"#6b7280";
+  formEl.innerHTML+=`<div class="form-card">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:20px">${f.emoji}</span>
+        <div class="form-name">${f.name}</div>
+      </div>
+      <span style="font-size:11px;padding:2px 8px;border-radius:4px;border:1px solid ${gc};color:${gc};background:${gc}1a;margin-left:8px;white-space:nowrap">${f.grade}</span>
+    </div>
+    <div class="form-cond">조건: ${f.cond_text}</div>
+    <div style="font-size:12px;color:var(--txt2);margin-bottom:6px">${f.desc}</div>
+    <div class="form-buffs">${f.buffs.map(b=>`<span class="form-buff">${b}</span>`).join("")}</div>
+  </div>`;
+});
+
+// ── 파티 시너지 오행 피커
+function buildPicker(id,sel,cb){
+  const w=document.getElementById(id);w.innerHTML="";
+  Object.entries(EL).forEach(([el,info])=>{
+    const btn=document.createElement("button");
+    btn.className="elb"+(el===sel?" on":"");
+    if(el===sel){btn.style.background=info.bg;btn.style.borderColor=info.bc;btn.style.color=info.sc;}
+    btn.innerHTML=info.e+"<br><span style='font-size:10px'>"+el+"</span>";
+    btn.onclick=()=>{cb(el);buildPicker(id,el,cb);};
+    w.appendChild(btn);
+  });
+}
+buildPicker("pickA",selA,v=>{selA=v;});
+buildPicker("pickB",selB,v=>{selB=v;});
+
+function calcSyn(){
+  const nA=document.getElementById("s-na").value||"A";
+  const nB=document.getElementById("s-nb").value||"B";
+  const r=getRel(selA,selB);
+  const gc=r.score>=80?"#4a8c5c":r.score>=65?"#3a6a9c":r.score>=50?"#a07832":"#c45c5c";
+  const tc=r.type==="상생"?"#4a8c5c":r.type==="상극"?"#c45c5c":"#3a6a9c";
+  const bufH=(buf,nm)=>{const e=Object.entries(buf).filter(([,v])=>v!==0);if(!e.length)return`<div style="font-size:11px;color:var(--txt3)">변화 없음</div>`;return e.map(([k,v])=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid var(--bdr)"><span>${k}</span><span style="font-weight:700;color:${v>0?"#6dbf84":"#c45c5c"}">${v>0?"+"+v:v}</span></div>`).join("");};
+  document.getElementById("syn-res").innerHTML=`<div class="card"><div class="ch"><div style="font-size:13px;font-weight:500">${EL[selA].e} ${nA} × ${EL[selB].e} ${nB}</div></div><div class="cb"><div style="text-align:center;padding:.75rem 0"><div style="font-size:42px;font-weight:700;color:${gc}">${r.score}</div><div style="font-size:11px;color:var(--txt2);margin-top:2px">/ 100</div><div style="margin-top:8px"><span style="font-size:12px;padding:3px 12px;border-radius:20px;background:${tc}1a;color:${tc};border:1px solid ${tc}40">${r.lbl}</span></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px"><div><div style="font-size:11px;color:var(--txt2);margin-bottom:5px">${nA}에게</div>${bufH(r.bufA,nA)}</div><div><div style="font-size:11px;color:var(--txt2);margin-bottom:5px">${nB}에게</div>${bufH(r.bufB,nB)}</div></div></div></div>`;
+}
+
+// ── 피드백
+function setStar(n){starRating=n;document.querySelectorAll(".star-btn").forEach((b,i)=>b.classList.toggle("on",i<n));}
+
+async function submitFb(){
+  if(!starRating){document.getElementById("fb-res").innerHTML='<div class="err">별점을 선택해주세요.</div>';return;}
+  const FORM_ID="YOUR_GOOGLE_FORM_ID";
+  const p=new URLSearchParams({"entry.STAR":starRating,"entry.BEST":document.getElementById("fb-b").value,"entry.WRONG":document.getElementById("fb-w").value,"entry.RESULT":lastResult?JSON.stringify({class:lastResult.class_sub,grade:lastResult.potential_grade,total:lastResult.total_power}):"미발급"});
+  try{await fetch(`https://docs.google.com/forms/d/${FORM_ID}/formResponse?${p}`,{method:"POST",mode:"no-cors"});}catch(e){}
+  document.getElementById("fb-res").innerHTML='<div class="ok">피드백 감사합니다! 더 정확한 팔자길드를 만드는 데 큰 도움이 됩니다 🙏</div>';
+  setStar(0);
+}
+
+// ═══════════════════════════════════════════
+// 팔자길드 전투 시스템 v1.0
+// ═══════════════════════════════════════════
+
+// 일진 계산
+const STEMS = ["甲","乙","丙","丁","戊","己","庚","辛","壬","癸"];
+const STEM_EL = {甲:"목",乙:"목",丙:"화",丁:"화",戊:"토",己:"토",庚:"금",辛:"금",壬:"수",癸:"수"};
+const BRANCHES = ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
+
+function getDayGanzhi(d){
+  const base=new Date(2000,0,1);
+  const idx=((Math.floor((d-base)/86400000)%60)+60)%60;
+  return{stem:STEMS[idx%10],branch:BRANCHES[idx%12],el:STEM_EL[STEMS[idx%10]]};
+}
+
+// 오행 → 기신 (극하는 오행이 기신)
+// 나를 극하는 오행 = 기신 (내가 약해지는 오행)
+const KSIN = {목:"금",화:"수",토:"목",금:"화",수:"토"};
+// 내가 극하는 오행 = 용신 후보
+const YONG = {목:"토",화:"금",토:"수",금:"목",수:"화"};
+
+// 귀신 데이터
+const BATTLE_GHOSTS = {
+  토:{
+    name:"무덤귀신(地鬼)", emoji:"⛰️", color:"#a07832",
+    quote:"\"변화를 두려워하는 자여… 이 자리에 영원히 머물러라.\"",
+    appear:"어두운 땅속에서 검은 기운이 천천히 솟아오른다…",
+    hp:65,
+    atk:["변화 공포를 주입한다!","현상 유지의 늪으로 끌어당긴다!","보수적 집착을 강화시킨다!","안주의 중독을 심어놓는다!"],
+    myAtk:["꾸준한 지속력으로 정면 돌파!","현실적 판단으로 땅귀신의 허점을 노린다!","리스크관리로 함정을 피해낸다!","변화의 의지로 사슬을 끊는다!"],
+    win:["⛰️ 무덤귀신이 땅 속으로 스러진다!\n지박령의 사슬이 끊어졌다. 오늘 변화를 두려워하지 마라.","땅귀신의 기운이 소멸한다!\n오늘 당신은 현상 유지를 거부하고 앞으로 나아갈 수 있다."],
+    lose:["💀 무덤귀신의 기운에 압도되었다…\n오늘은 큰 변화보다 안정을 택하며 힘을 아끼자."]
+  },
+  화:{
+    name:"화귀(火鬼)", emoji:"🔥", color:"#c45c3a",
+    quote:"\"네 모든 열정을 태워 잿더미로 만들어주겠다!\"",
+    appear:"허공에서 붉은 불꽃이 소용돌이치며 형체를 갖춘다…",
+    hp:60,
+    atk:["충동 폭탄을 투척한다!","감정 교란 화염을 뿜는다!","과소비 유혹으로 이성을 흐린다!","분노의 불꽃으로 판단력을 태운다!"],
+    myAtk:["냉정한 분석으로 불꽃을 잡는다!","통찰력으로 화귀의 허점을 꿰뚫는다!","차가운 이성으로 열기를 차단한다!","학습된 경험으로 충동을 억제한다!"],
+    win:["🔥 화귀가 불꽃을 잃고 사라진다!\n오늘 충동적인 결정을 피할 수 있다. 냉정함을 유지하라.","화귀의 불꽃이 꺼진다!\n오늘 감정적 소비와 충동을 이겨냈다."],
+    lose:["💀 화귀의 열기에 정신이 흐려진다…\n오늘 중요한 결정은 내일로 미루고, 충동 지출에 주의하자."]
+  },
+  수:{
+    name:"이무기(蛟鬼)", emoji:"🐍", color:"#1a8090",
+    quote:"\"불안의 파도로 너를 집어삼키겠다!\"",
+    appear:"검은 물속에서 거대한 그림자가 꿈틀거리며 솟구친다…",
+    hp:70,
+    atk:["만성 불안을 주입한다!","방향 감각을 흩뜨린다!","현실 도피를 유혹한다!","결정 장애 독을 뿌린다!"],
+    myAtk:["안정된 기운으로 물결을 잠재운다!","지속력으로 이무기의 흐름을 막는다!","현실적 판단으로 허상을 밝힌다!","리스크관리로 불안의 파도를 넘긴다!"],
+    win:["🐍 이무기가 깊은 물속으로 가라앉는다!\n오늘 불안에 흔들리지 마라. 당신의 판단을 믿어라.","물귀신의 소용돌이가 잦아든다!\n오늘 결정 장애 없이 명확하게 선택할 수 있다."],
+    lose:["💀 이무기의 불안 파도에 휩쓸린다…\n오늘은 새로운 도전보다 안정에 집중하고, 큰 결정은 피하자."]
+  },
+  금:{
+    name:"도깨비(鐵鬼)", emoji:"👺", color:"#3a6a9c",
+    quote:"\"날카로운 방망이로 네 의욕을 산산조각 내겠다!\"",
+    appear:"쇠 방망이 소리와 함께 붉은 눈빛의 도깨비가 나타난다…",
+    hp:62,
+    atk:["냉소 방망이를 휘두른다!","비판적 집착을 강화한다!","대인 관계 단절을 유발한다!","자존감을 깎아내린다!"],
+    myAtk:["따뜻한 열정으로 냉기를 녹인다!","창의력으로 방망이를 피해낸다!","대인매력으로 도깨비를 무력화한다!","감성으로 쇠 방망이를 부드럽게 만든다!"],
+    win:["👺 도깨비가 방망이를 떨어뜨리고 도망간다!\n오늘 냉소주의를 이겨냈다. 자신을 믿어라.","도깨비의 쇠 방망이가 녹아내린다!\n오늘 타인의 비판에 흔들리지 않는다."],
+    lose:["💀 도깨비의 차가운 방망이에 의욕이 꺾인다…\n오늘은 타인의 평가보다 내 페이스를 지키는 것에 집중하자."]
+  },
+  목:{
+    name:"청목귀(靑木鬼)", emoji:"🌲", color:"#4a8c5c",
+    quote:"\"우유부단함이라는 덫으로 너를 영원히 묶어두겠다!\"",
+    appear:"숲 속에서 나무 형태의 검은 기운들이 모여든다…",
+    hp:58,
+    atk:["우유부단함의 덫을 설치한다!","인간관계 집착을 심어놓는다!","결단력을 서서히 빼앗는다!","기회를 눈앞에서 사라지게 한다!"],
+    myAtk:["날카로운 분석으로 덫을 끊어낸다!","리스크관리로 함정을 감지한다!","현실적 판단으로 묶인 것을 풀어낸다!","냉철함으로 감정적 집착을 차단한다!"],
+    win:["🌲 청목귀가 숲 속으로 사라진다!\n오늘 결단력이 살아있다. 망설임 없이 행동하라.","나무귀신의 뿌리가 뽑힌다!\n오늘 우유부단함 없이 빠른 결정을 내릴 수 있다."],
+    lose:["💀 청목귀의 덫에 걸렸다…\n오늘은 큰 결정 대신 작은 것부터 빠르게 실행하며 리듬을 찾자."]
+  }
+};
+
+// 오행별 전투 주요 스탯
+// EL_STATS는 기존 코드에서 사용
+const EL_EMOJIS = {목:"🌿",화:"🔥",토:"🏔️",금:"⚔️",수:"💧"};
+
+// 상극 관계
+const CLASH_MAP = {목:["토"],화:["금"],토:["수"],금:["목"],수:["화"]};
+
+// 전투 상태
+let btState = {
+  userName:"", userEl:"토", ghost:null, ghostEl:"",
+  power:{user:0, ghost:0}, win:false,
+  round:0, maxRounds:3, rounds:[], finished:false
+};
+
+let btElSel = "토";
+
+function initBattle(){
+  const today = new Date();
+  const gz = getDayGanzhi(today);
+  document.getElementById("bt-today-info").innerHTML =
+    `오늘 일진: <strong style="color:var(--gold)">${gz.stem}${gz.branch}일 (${gz.el}기운)</strong><br>
+     오늘의 일진을 확인하고 당신의 오행을 선택하면 전투가 시작됩니다.`;
+  buildBtPicker();
+  updateRemainMsg();
+}
+
+function buildBtPicker(){
+  const wrap = document.getElementById("bt-pick");
+  if(!wrap) return;
+  wrap.innerHTML = "";
+  const EL = {목:{e:"🌿",sc:"#4a8c5c",bg:"rgba(74,140,92,.15)",bc:"rgba(74,140,92,.4)"},화:{e:"🔥",sc:"#c45c3a",bg:"rgba(196,92,58,.15)",bc:"rgba(196,92,58,.4)"},토:{e:"🏔️",sc:"#a07832",bg:"rgba(160,120,50,.15)",bc:"rgba(160,120,50,.4)"},금:{e:"⚔️",sc:"#3a6a9c",bg:"rgba(58,106,156,.15)",bc:"rgba(58,106,156,.4)"},수:{e:"💧",sc:"#1a8090",bg:"rgba(26,128,144,.15)",bc:"rgba(26,128,144,.4)"}};
+  Object.entries(EL).forEach(([el,info])=>{
+    const btn=document.createElement("button");
+    btn.className="elb"+(el===btElSel?" on":"");
+    if(el===btElSel){btn.style.background=info.bg;btn.style.borderColor=info.bc;btn.style.color=info.sc;}
+    btn.innerHTML=info.e+"<br><span style='font-size:10px'>"+el+"</span>";
+    btn.onclick=()=>{btElSel=el;buildBtPicker();updateGhostPreview();};
+    wrap.appendChild(btn);
+  });
+  updateGhostPreview();
+}
+
+function updateGhostPreview(){
+  const today=new Date();
+  const gz=getDayGanzhi(today);
+  const ksinEl=KSIN[btElSel];
+  const todayEl=gz.el;
+  const isEnhanced=(todayEl===ksinEl);
+  const ghost=BATTLE_GHOSTS[ksinEl];
+  if(!ghost)return;
+  const txt=`오늘 일진: <strong style="color:var(--gold)">${gz.stem}${gz.branch}일 (${todayEl}기운)</strong><br>
+    내 기신: <strong style="color:${ghost.color}">${ksinEl}(${ghost.emoji}) → ${ghost.name}</strong>${isEnhanced?' <span style="color:#c45c5c;font-size:11px">⚠️ 오늘 기신 강화!</span>':''}`;
+  document.getElementById("bt-today-info").innerHTML=txt;
+}
+
+function updateRemainMsg(){
+  const r=getRemain();
+  const el=document.getElementById("bt-remain-msg");
+  const btn=document.getElementById("bt-start-btn");
+  if(r<=0){el.innerHTML='<span style="color:#c45c5c">오늘 전투 횟수를 모두 사용했습니다 (하루 2회 제한)</span>';btn.disabled=true;btn.style.opacity=".4";}
+  else{el.innerHTML=`<span style="color:var(--txt2)">오늘 남은 전투: <strong style="color:var(--gold)">${r}회</strong></span>`;btn.disabled=false;btn.style.opacity="1";}
+}
+
+function getRemain(){
+  const today=new Date().toDateString();
+  try{const d=JSON.parse(localStorage.getItem("pjg_battle")||"{}");return d.date===today?Math.max(0,2-d.count):2;}catch{return 2;}
+}
+
+function useFight(){
+  const today=new Date().toDateString();
+  try{const d=JSON.parse(localStorage.getItem("pjg_battle")||"{}");const c=(d.date===today?d.count:0)+1;localStorage.setItem("pjg_battle",JSON.stringify({date:today,count:c}));}catch{}
+}
+
+function rnd(arr){return arr[Math.floor(Math.random()*arr.length)];}
+
+function startBattle(){
+  if(getRemain()<=0)return;
+  const name=document.getElementById("bt-name").value.trim()||"용사";
+  const userEl=btElSel;
+  const today=new Date();
+  const gz=getDayGanzhi(today);
+  const ksinEl=KSIN[userEl];
+  const ghost=BATTLE_GHOSTS[ksinEl];
+  const isEnhanced=(gz.el===ksinEl);
+
+  // 전투력 계산
+  const statMap=EL_STATS[userEl]||["통찰력","학습력"];
+  const basePower=65; // 스탯 카드 없을 때 기본값
+  let mult=1.0;
+  if(CLASH_MAP[userEl]?.includes(ksinEl)) mult=1.5; // 내가 귀신을 극
+  else if(CLASH_MAP[ksinEl]?.includes(userEl)) mult=0.7; // 귀신이 나를 극
+  const userPower=Math.round(basePower*mult);
+  const ghostPower=ghost.hp+(isEnhanced?12:0);
+  const win=userPower>ghostPower;
+
+  // 라운드 텍스트 생성
+  const rounds=[
+    {title:`1라운드 — ${ghost.name} 의 공격!`, enemy:rnd(ghost.atk), mine:rnd(ghost.myAtk), emoji:ghost.emoji},
+    {title:`2라운드 — ${name}의 반격!`, enemy:rnd(ghost.atk), mine:rnd(ghost.myAtk), emoji:EL_EMOJIS[userEl]},
+    {title:`3라운드 — 결정타!`, enemy:rnd(ghost.atk), mine:win?`${rnd(ghost.myAtk)} → 치명타!`:`${rnd(ghost.myAtk)} → 역부족…`, emoji:win?"✨":"💢"}
+  ];
+
+  btState={userName:name,userEl,ghost,ghostEl:ksinEl,power:{user:userPower,ghost:ghostPower},win,round:0,maxRounds:3,rounds,finished:false};
+  useFight();
+
+  document.getElementById("bt-setup").style.display="none";
+  document.getElementById("bt-fight").style.display="block";
+  document.getElementById("bt-result").style.display="none";
+
+  // 귀신 등장
+  document.getElementById("bt-ghost-emoji").textContent=ghost.emoji;
+  document.getElementById("bt-ghost-name").textContent=ghost.name;
+  document.getElementById("bt-ghost-quote").innerHTML=`<div style="color:var(--txt2);margin-bottom:.5rem">${ghost.appear}</div><div style="color:${ghost.color}">${ghost.quote}</div>`;
+  document.getElementById("bt-rounds").innerHTML="";
+  document.getElementById("bt-fight-btn").textContent="▶ 전투 시작";
+}
+
+let btRound=0;
+function nextRound(){
+  const btn=document.getElementById("bt-fight-btn");
+  const roundsEl=document.getElementById("bt-rounds");
+
+  if(btState.round<btState.maxRounds){
+    const r=btState.rounds[btState.round];
+    const card=document.createElement("div");
+    card.style.cssText="background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;padding:.75rem 1rem;margin-bottom:8px;animation:fadeIn .3s ease";
+    card.innerHTML=`<div style="font-size:11px;color:var(--gold);margin-bottom:6px;font-weight:500">${r.title}</div>
+      <div style="font-size:12px;color:#c45c5c;margin-bottom:5px">👹 ${r.enemy}</div>
+      <div style="font-size:12px;color:#5aaa78">${r.emoji} ${r.mine}</div>`;
+    roundsEl.appendChild(card);
+    btState.round++;
+
+    if(btState.round>=btState.maxRounds){btn.textContent="▶ 결과 확인";}
+    else{btn.textContent="▶ 다음";}
+  } else {
+    showBattleResult();
+  }
+}
+
+function showBattleResult(){
+  document.getElementById("bt-fight").style.display="none";
+  document.getElementById("bt-result").style.display="block";
+
+  const{win,ghost,ghostEl,userEl,power,userName}=btState;
+  const gc=win?"#4a8c5c":"#c45c5c";
+
+  document.getElementById("bt-result-emoji").textContent=win?"🏆":"💀";
+  document.getElementById("bt-result-title").innerHTML=`<span style="color:${gc}">${win?"승리! 귀신을 물리쳤다":"패배... 귀신에게 압도되었다"}</span>`;
+  document.getElementById("bt-result-desc").textContent=win?rnd(ghost.win):rnd(ghost.lose);
+
+  const buffList=win?
+    (EL_STATS[userEl]||[]).map(s=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid var(--bdr)"><span>${s}</span><span style="color:#5aaa78;font-weight:700">+15 (오늘 한정)</span></div>`).join(""):
+    `<div style="font-size:13px;color:#c45c5c;text-align:center;padding:.5rem 0">오늘 주요 스탯 -8 (오늘 한정)</div>`;
+
+  document.getElementById("bt-buffs").innerHTML=`
+    <div style="font-size:11px;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">오늘의 능력치 변화</div>
+    ${buffList}
+    <div style="font-size:11px;color:var(--txt3);margin-top:8px">※ 세션 종료 시 초기화됩니다</div>`;
+
+  const remain=getRemain();
+  document.getElementById("bt-remain-final").innerHTML=remain>0?
+    `⚔️ 오늘 남은 전투: <strong style="color:var(--gold)">${remain}회</strong>`:
+    `오늘 전투를 모두 마쳤습니다. 내일 다시 도전하세요!`;
+}
+
+function resetBattle(){
+  document.getElementById("bt-setup").style.display="block";
+  document.getElementById("bt-fight").style.display="none";
+  document.getElementById("bt-result").style.display="none";
+  btState.round=0;
+  document.getElementById("bt-rounds").innerHTML="";
+  updateRemainMsg();
+}
+
+// fadeIn 애니메이션
+const battleStyle=document.createElement("style");
+battleStyle.textContent="@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}";
+document.head.appendChild(battleStyle);
+
+</script>
+</body>
+</html>
