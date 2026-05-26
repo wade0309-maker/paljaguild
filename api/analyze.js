@@ -118,7 +118,10 @@ advice: 오늘 하루를 위한 구체적인 조언 1문장 (사주 특성 반�
       return res.status(500).json({ error: "Anthropic API 오류", detail: errText.slice(0, 200) });
     }
 
-    const data = await resp.json();
+    const respText = await resp.text();
+    let data;
+    try { data = JSON.parse(respText); }
+    catch(e) { return res.status(500).json({ error: "API 응답 오류", detail: respText.slice(0,300) }); }
     let raw = (data.content?.[0]?.text || "").trim();
 
     // JSON 추출
@@ -131,4 +134,4 @@ advice: 오늘 하루를 위한 구체적인 조언 1문장 (사주 특성 반�
   } catch (e) {
     return res.status(500).json({ error: "서버 오류", detail: e.message });
   }
-}
+};
