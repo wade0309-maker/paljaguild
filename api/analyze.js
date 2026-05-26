@@ -1,7 +1,3 @@
-// Edge Runtime — TrueBaziEngine 통합 버전
-// 생년월일을 코드로 계산 → Claude는 스탯/클래스만 담당
-export const config = { runtime: 'edge' };
-
 // ════════════════════════════════
 // TrueBaziEngine (만세력 계산 엔진)
 // ════════════════════════════════
@@ -216,6 +212,42 @@ const LUNAR_TO_SOLAR_NOTE = '음력 변환 기능은 현재 준비 중입니다.
 
 
 
+
+function calculateBazi(year,month,day,hour,minute,lon,gender){
+  const {tm,lonOff,eot,h:th,m:tm2}=trueSolarTime(year,month,day,hour,minute,lon);
+  const jdNoon=julianDay(year,month,day,12-9);
+
+  const [ysI,ybI]=calcYearPillar(jdNoon,year);
+  const [msI,mbI]=calcMonthPillar(jdNoon,year,ysI);
+  const [dsI,dbI]=calcDayPillar(jdNoon);
+  const hbI=getHourBranch(th,tm2);
+  const [hsI,hbI2]=calcHourPillar(hbI,dsI);
+
+  const mkP=(sI,bI)=>({
+    stemI:sI, branchI:bI,
+    stem:STEMS[sI], branch:BRANCHES[bI],
+    stemElem:STEM_ELEM[sI], branchElem:BR_ELEM[bI],
+    stemSS: calcSipseong(dsI,sI),
+    branchSS: calcSipseongBr(dsI,bI),
+    woonseong: calc12Woonseong(dsI,bI),
+    jijanggan: JIJANGGAN[bI].map(i=>STEMS[i]),
+    sinsal: calcSinsal(dbI,bI),
+  });
+
+  const pillars={
+    년주: mkP(ysI,ybI),
+    월주: mkP(msI,mbI),
+    일주: {...mkP(dsI,dbI), stemSS:'비견'},
+    시주: mkP(hsI,hbI2),
+  };
+  const daewoon=calcDaewoon(year,jdNoon,msI,mbI,ysI,gender);
+  const ohaeng=calcOhaeng([pillars.년주,pillars.월주,pillars.일주,pillars.시주]);
+
+  return {
+    meta:{trueSolar:`${String(th).padStart(2,'0')}:${String(tm2).padStart(2,'0')}`,lonOff:lonOff.toFixed(1),eot:eot.toFixed(1)},
+    pillars, daewoon, ohaeng
+  };
+}
 // 시주 변환 헬퍼 (한국어 → 시간)
 function hourNameToTime(hourName) {
   const map = {
@@ -251,6 +283,8 @@ advice: 오늘 하루 구체적 조언 1문장 20자 내외
 // ════════════════════════════════
 // Edge Handler
 // ════════════════════════════════
+export const config = { runtime: 'edge' };
+
 export default async function handler(req) {
   const headers = {
     'Content-Type': 'application/json',
@@ -284,7 +318,7 @@ export default async function handler(req) {
       h, m, lon, gender === '여' ? 'F' : 'M'
     );
   } catch(e) {
-    return new Response(JSON.stringify({ error: '사주 계산 오류', detail: e.message }), { status: 500, headers });
+    return new Response(JSON.stringify({ error: '사주 계산 오류', detail: e.message, stack: e.stack?.slice(0,300) }), { status: 500, headers });
   }
 
   // ── 십성 목록 정리
