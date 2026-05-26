@@ -350,7 +350,7 @@ module.exports = async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-5-20251001",
-        max_tokens: 1200,
+        max_tokens: 2000,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: userMsg }]
       })
