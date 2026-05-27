@@ -7,6 +7,7 @@
 <meta name="description" content="생년월일로 나만의 RPG 스탯 카드를 발급받고, 파티 시너지와 오늘의 운세까지 확인하세요.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
 :root{--bg:#0f0e0c;--sur:#1a1916;--sur2:#242220;--bdr:rgba(255,255,255,.08);--bdr2:rgba(255,255,255,.15);--gold:#d4a847;--gdim:#a07832;--txt:#e8e4da;--txt2:#9a9488;--txt3:#5a5650;--red:#c45c3a;--green:#4a8c5c;--blue:#3a6a9c;--r:10px}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -112,6 +113,17 @@ input::placeholder{color:var(--txt3)}
 .ok{background:rgba(74,140,92,.15);border:1px solid rgba(74,140,92,.3);border-radius:var(--r);padding:10px 14px;font-size:13px;color:#6dbf84;margin-top:8px}
 
 footer{text-align:center;padding:2rem;font-size:11px;color:var(--txt3);border-top:1px solid var(--bdr);margin-top:2rem}
+
+/* [추가 2] 프리미엄 리포트 마크다운 전용 CSS (다크 테마 최적화) */
+#premium-result h1, #premium-result h2, #premium-result h3 { color: var(--gold); margin-top: 1.5em; margin-bottom: 0.5em; font-family: 'Noto Serif KR', serif; font-weight: 700; }
+#premium-result h3 { font-size: 16px; border-bottom: 1px solid var(--bdr); padding-bottom: 6px; }
+#premium-result table { width: 100%; border-collapse: collapse; margin: 1.2em 0; font-size: 12px; background: var(--sur2); border-radius: 8px; overflow: hidden; }
+#premium-result th, #premium-result td { border: 1px solid var(--bdr); padding: 10px; text-align: left; }
+#premium-result th { background: var(--sur); color: var(--gold); font-weight: bold; }
+#premium-result blockquote { border-left: 3px solid var(--gdim); margin: 1.5em 0; padding: 12px 16px; color: #d4c8b8; font-style: italic; background: rgba(212,168,71,.08); border-radius: 0 8px 8px 0; }
+#premium-result ul, #premium-result ol { padding-left: 20px; margin-bottom: 1.2em; }
+#premium-result li { margin-bottom: 6px; }
+#premium-result strong { color: #f2e2c2; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -133,7 +145,6 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--txt3);border-to
   <div class="tab" onclick="sw(6)">📝 피드백</div>
 </div>
 
-<!-- 탭 0: 스탯 카드 -->
 <div id="t0" class="panel on">
   <div id="form-sec">
     <div class="fg"><label>이름</label><input id="i-name" placeholder="홍길동" maxlength="10"></div>
@@ -175,22 +186,26 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--txt3);border-to
       </select>
       <div style="font-size:11px;color:var(--txt3);margin-top:4px">모르면 오시(낮 12시 전후)로 선택</div>
     </div>
+    
     <button class="btn" id="btn-go" onclick="analyze()">⚔️ 스탯 카드 발급</button>
+    
+    <button class="btn" id="btn-premium" style="background:linear-gradient(135deg, #1a73e8, #0d47a1); color: white; margin-top: 10px;" onclick="getPremiumReport()">👑 프리미엄 사주 리포트 발급받기</button>
+    
     <div id="err-msg"></div>
   </div>
+  
   <div id="load-sec" style="display:none"><div class="loading"><div style="font-size:13px;color:var(--txt2);margin-bottom:12px">사주 분석 중...</div><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
   <div id="res-sec" style="display:none"></div>
+  
+  <div id="premium-result" style="margin-top: 1.5rem; padding: 1.5rem; background: var(--sur); border: 1px solid var(--bdr); border-radius: var(--r); display: none;"></div>
 </div>
 
-<!-- 탭 1: 전투 -->
-
-<!-- 탭 1: 사주풀이 -->
 <div id="t1" class="panel">
   <div id="saju-locked" style="text-align:center;padding:2.5rem 1rem">
     <div style="font-size:40px;margin-bottom:.75rem">📖</div>
     <div style="font-family:'Noto Serif KR',serif;font-size:17px;color:var(--gold);margin-bottom:.5rem">사주 풀이</div>
     <div style="font-size:13px;color:var(--txt2);line-height:1.7;margin-bottom:1.25rem">
-      스탯 카드를 먼저 발급하면<br>프리미엄 사주 풀이를 확인할 수 있습니다.
+      스탯 카드를 먼저 발급하면<br>기존 사주 풀이를 확인할 수 있습니다.
     </div>
     <button class="btn" onclick="sw(0)" style="max-width:240px;margin:0 auto">⚔️ 스탯 카드 발급하기</button>
   </div>
@@ -201,7 +216,6 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--txt3);border-to
   </div>
 
   <div id="saju-result" style="display:none">
-    <!-- 서브탭 -->
     <div style="display:flex;gap:5px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px">
       <button class="mtab on" id="st0" onclick="swSaju(0)">🎯 요약</button>
       <button class="mtab" id="st1" onclick="swSaju(1)">💰 부&커리어</button>
@@ -209,7 +223,6 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--txt3);border-to
       <button class="mtab" id="st3" onclick="swSaju(3)">📋 처방전</button>
     </div>
 
-    <!-- 서브패널 0: 요약 -->
     <div id="sp0">
       <div id="saju-persona" class="card" style="margin-bottom:10px"></div>
       <div class="card" style="margin-bottom:10px">
@@ -229,7 +242,6 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--txt3);border-to
       <div id="saju-receipt" class="card"></div>
     </div>
 
-    <!-- 서브패널 1: 부&커리어 -->
     <div id="sp1" style="display:none">
       <div class="card" style="margin-bottom:10px">
         <div class="ch"><div style="font-size:13px;font-weight:500">📈 연령대별 재물운 흐름</div></div>
@@ -244,12 +256,10 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--txt3);border-to
       <div id="saju-wealth" class="card"></div>
     </div>
 
-    <!-- 서브패널 2: 심층분석 -->
     <div id="sp2" style="display:none">
       <div id="saju-deep" class="card"></div>
     </div>
 
-    <!-- 서브패널 3: 처방전 -->
     <div id="sp3" style="display:none">
       <div id="saju-action" class="card"></div>
     </div>
@@ -307,8 +317,7 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--txt3);border-to
   </div>
 </div>
 
-<!-- 탭 1: 귀신 도감 -->
-<div id="t4" class="panel">
+<div id="t3" class="panel">
   <div style="font-size:13px;color:var(--txt2);margin-bottom:1rem;line-height:1.6">
     사주의 기신(忌神)은 나를 괴롭히는 오행입니다.<br>
     팔자길드에서는 이를 <span style="color:var(--gold)">한국형 귀신 캐릭터</span>로 시각화합니다.
@@ -316,7 +325,6 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--txt3);border-to
   <div id="ghost-list"></div>
 </div>
 
-<!-- 탭 2: 파티 포메이션 -->
 <div id="t4" class="panel">
   <div style="font-size:13px;color:var(--txt2);margin-bottom:1rem;line-height:1.6">
     특정 오행 조합으로 파티를 구성하면 <span style="color:var(--gold)">특수 포메이션</span>이 발동합니다.
@@ -324,8 +332,7 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--txt3);border-to
   <div id="form-list"></div>
 </div>
 
-<!-- 탭 3: 파티 시너지 -->
-<div id="t6" class="panel">
+<div id="t5" class="panel">
   <div id="partner-notice" style="display:none;background:rgba(74,140,92,.15);border:1px solid rgba(74,140,92,.4);border-radius:var(--r);padding:.75rem 1rem;margin-bottom:10px;font-size:13px;color:#5aaa78;text-align:center"></div>
   <div class="card">
     <div class="ch"><div style="font-size:13px;font-weight:500">✨ 파티 시너지 계산기</div><div style="font-size:11px;color:var(--txt2);margin-top:2px">두 사람의 일간 오행을 선택하세요</div></div>
@@ -342,7 +349,6 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--txt3);border-to
   <div id="syn-res"></div>
 </div>
 
-<!-- 탭 4: 피드백 -->
 <div id="t6" class="panel">
   <div class="card">
     <div class="ch"><div style="font-size:13px;font-weight:500">이 결과가 나와 얼마나 맞나요?</div><div style="font-size:11px;color:var(--txt2);margin-top:2px">팔자길드 공식 개선에 직접 반영됩니다</div></div>
@@ -373,7 +379,7 @@ const EL={
   수:{e:"💧",sc:"#3a7a9c",bg:"rgba(58,122,156,.15)",bc:"rgba(58,122,156,.4)",label:"수(水)"}
 };
 
-// ── 귀신 도감 (5오행 × 기신/용신)
+// ── 귀신 도감
 const GHOSTS=[
   {el:"목",ksin_name:"청목귀(靑木鬼)",ksin_sub:"나무귀신·목도령",ksin_emoji:"🌲",ksin_color:"#3d7a4a",
    ksin_weak:"금(金) 오행",ksin_desc:"원한을 품고 숲 속을 떠도는 원귀. 목(木) 기신인 사람에게 우유부단함과 우울감을 불어넣는다.",
@@ -448,38 +454,31 @@ function goToPartySynergy() {
   if (!lastResult) return;
   const myName = lastResult.name || "";
   const myEl = lastResult.ilgan_element || "토";
-  // A 슬롯: 내 정보 자동 입력
   document.getElementById("s-na").value = myName;
   selA = myEl;
   buildPicker("pickA", selA, v => { selA = v; });
-  // B 슬롯: URL 파라미터에 파티원 정보가 있으면 자동 입력, 없으면 비워두기
   const urlPartner = getURLPartner();
   if (urlPartner) {
     document.getElementById("s-nb").value = urlPartner.name;
     selB = urlPartner.el;
   } else {
     document.getElementById("s-nb").value = "";
-    selB = myEl === "화" ? "토" : "화"; // 내 오행과 다른 오행으로 초기화
+    selB = myEl === "화" ? "토" : "화"; 
   }
   buildPicker("pickB", selB, v => { selB = v; });
-  // 전투 탭 오행도 업데이트
   btElSel = myEl;
   buildBtPicker();
   sw(5);
 }
 
-// URL 파라미터에서 파티원 정보 읽기
 function getURLPartner() {
   const params = new URLSearchParams(window.location.search);
   const name = params.get('party');
   const el = params.get('el');
-  if (name && el && ['목','화','토','금','수'].includes(el)) {
-    return { name, el };
-  }
+  if (name && el && ['목','화','토','금','수'].includes(el)) return { name, el };
   return null;
 }
 
-// 파티 초대 링크 복사
 function copyPartyLink() {
   if (!lastResult) return;
   const name = encodeURIComponent(lastResult.name || "");
@@ -491,30 +490,21 @@ function copyPartyLink() {
   });
 }
 
-// 페이지 로드 시 URL 파라미터 확인
 function checkURLPartner() {
   const partner = getURLPartner();
   if (!partner) return;
-
-  // 1. 파티 시너지 탭 B 슬롯 자동 입력
   document.getElementById("s-nb").value = partner.name;
   selB = partner.el;
   buildPicker("pickB", selB, v => { selB = v; });
-
-  // 2. 전투 탭 파티원에 자동 추가
   if (partyMembers.length === 0) {
     partyMembers.push({ name: partner.name, el: partner.el });
     renderPartyMembers();
   }
-
-  // 3. 안내 배너 표시 (파티 시너지 탭 + 전투 탭 공통)
   const notice = document.getElementById('partner-notice');
   if (notice) {
     notice.style.display = 'block';
     notice.innerHTML = '🎉 <strong>' + partner.name + '</strong>(' + partner.el + ')님이 파티 초대를 보냈습니다! 스탯 카드를 발급하면 파티가 완성됩니다.';
   }
-
-  // 전투 탭 배너도 표시
   const btNotice = document.getElementById('bt-partner-notice');
   if (btNotice) {
     btNotice.style.display = 'block';
@@ -524,10 +514,9 @@ function checkURLPartner() {
 
 function sw(i){document.querySelectorAll(".tab").forEach((t,j)=>t.classList.toggle("on",i===j));document.querySelectorAll(".panel").forEach((p,j)=>p.classList.toggle("on",i===j));if(i===2){initBattle();}if(i===1&&lastResult){initSajuPulii();}}
 
-// ── 성별
 function setGender(g,el){gender=g;["btn-m","btn-f"].forEach(id=>{const b=document.getElementById(id);b.style.background="transparent";b.style.borderColor="var(--bdr2)";b.style.color="var(--txt2)"});el.style.background="rgba(212,168,71,.1)";el.style.borderColor="var(--gdim)";el.style.color="var(--gold)";}
 
-// ── 스탯 카드 발급
+// ── 스탯 카드 발급 (기존 로직 유지)
 async function analyze(){
   const name=document.getElementById("i-name").value.trim();
   const year=document.getElementById("i-y").value;
@@ -536,7 +525,12 @@ async function analyze(){
   const hour=document.getElementById("i-h").value;
   const err=document.getElementById("err-msg");
   err.innerHTML="";
+  
   if(!name||!year||!month||!day){err.innerHTML='<div class="err">이름과 생년월일을 입력해주세요.</div>';return;}
+  
+  // 프리미엄 리포트 결과창 숨김 처리
+  document.getElementById("premium-result").style.display="none";
+  
   document.getElementById("form-sec").style.display="none";
   document.getElementById("load-sec").style.display="block";
   try{
@@ -550,20 +544,15 @@ async function analyze(){
 
 function fixSpacing(text) {
   if (!text) return text;
-  // 붙어있는 한글 단어 사이 띄어쓰기 보정
-  return text
-    .replace(/([가-힣])([A-Z])/g, '$1 $2')
-    .replace(/([A-Z])([가-힣])/g, '$1 $2')
-    .trim();
+  return text.replace(/([가-힣])([A-Z])/g, '$1 $2').replace(/([A-Z])([가-힣])/g, '$1 $2').trim();
 }
 
 function showResult(d){
-  // 텍스트 띄어쓰기 후처리
   if(d.hidden_ability) d.hidden_ability = fixSpacing(d.hidden_ability);
   if(d.weakness) d.weakness = fixSpacing(d.weakness);
   if(d.synergy_buff) d.synergy_buff = fixSpacing(d.synergy_buff);
   if(d.advice) d.advice = fixSpacing(d.advice);
-  if(d.class_sub) d.class_sub = d.class_sub.replace(/([가-힣])([가-힣]{2,})/g, (m,a,b) => m); // 유지
+  if(d.class_sub) d.class_sub = d.class_sub.replace(/([가-힣])([가-힣]{2,})/g, (m,a,b) => m);
 
   document.getElementById("load-sec").style.display="none";
   const sec=document.getElementById("res-sec");sec.style.display="block";
@@ -620,6 +609,79 @@ function showResult(d){
 }
 
 function resetForm(){document.getElementById("res-sec").style.display="none";document.getElementById("form-sec").style.display="block";document.getElementById("err-msg").innerHTML="";}
+
+
+// ── [추가 5] 프리미엄 리포트 발급 함수 (Gemini 연동) ──
+async function getPremiumReport() {
+  const btn = document.getElementById('btn-premium');
+  const resultDiv = document.getElementById('premium-result');
+  const errBox = document.getElementById('err-msg');
+  errBox.innerHTML = '';
+
+  const name = document.getElementById('i-name').value.trim();
+  const year = parseInt(document.getElementById('i-y').value);
+  const month = parseInt(document.getElementById('i-m').value);
+  const day = parseInt(document.getElementById('i-d').value);
+  const hourStr = document.getElementById('i-h').value;
+
+  if (!name || !year || !month || !day) {
+    errBox.innerHTML = '<div class="err" style="margin-top:0">이름과 생년월일을 정확히 입력해주세요.</div>';
+    return;
+  }
+
+  // 시간 텍스트를 숫자로 매핑
+  const hourMap = { 자시:0, 축시:2, 인시:4, 묘시:6, 진시:8, 사시:10, 오시:12, 미시:14, 신시:16, 유시:18, 술시:20, 해시:22 };
+  const hour = hourMap[hourStr] || 12; // 기본 오시
+  const minute = 0;
+  const lon = 126.97; // 기본값 (서울)
+
+  btn.innerHTML = '<span class="spinner"></span>명리 엔진 구동 중... (약 15초)';
+  btn.disabled = true;
+  document.getElementById('res-sec').style.display = 'none'; // 기존 스탯카드 숨김
+  resultDiv.style.display = 'block';
+  resultDiv.innerHTML = '<div class="loading"><div style="font-size:13px;color:var(--txt2);margin-bottom:12px">최고위급 엔진이 운명 시나리오를 연산하고 있습니다...</div><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>';
+
+  try {
+    const response = await fetch('/api/premium', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, gender, year, month, day, hour, minute, lon })
+    });
+
+    if (!response.ok) throw new Error('API 통신 에러');
+    const data = await response.json();
+
+    let rawText = data.result;
+    
+    // JSON 파싱 및 제거
+    const jsonMatch = rawText.match(/```json\s*([\s\S]*?)\s*```/);
+    let jsonData = null;
+    if (jsonMatch) {
+      try { jsonData = JSON.parse(jsonMatch[1]); } catch (e) { console.error("JSON 파싱 에러", e); }
+      rawText = rawText.replace(jsonMatch[0], ''); // 마크다운 화면에서는 JSON 코드를 가림
+    }
+
+    // 마크다운을 HTML로 예쁘게 렌더링
+    const htmlContent = marked.parse(rawText.trim());
+    resultDiv.innerHTML = `
+      <div style="font-family:'Noto Serif KR',serif; font-size:22px; color:var(--gold); text-align:center; margin-bottom:1rem; border-bottom:1px solid var(--bdr); padding-bottom:1rem;">
+        👑 Executive Bazi Report
+      </div>
+      <div style="line-height: 1.8; font-size: 14px; color: var(--txt);">${htmlContent}</div>
+      <button class="btn-ghost" style="margin-top:20px;" onclick="resetForm()">← 돌아가기</button>
+    `;
+    
+    // 부드럽게 결과창으로 스크롤
+    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (error) {
+    resultDiv.innerHTML = `<div class="err" style="text-align:center; padding:1.5rem;">분석 중 오류가 발생했습니다.<br>잠시 후 다시 시도해주세요.<br><span style="font-size:11px; opacity:0.7">(${error.message})</span></div><button class="btn-ghost" style="margin-top:10px" onclick="resetForm()">돌아가기</button>`;
+    console.error(error);
+  } finally {
+    btn.innerHTML = '👑 프리미엄 사주 리포트 발급받기';
+    btn.disabled = false;
+  }
+}
 
 // ── 귀신 도감 렌더링
 const ghostEl=document.getElementById("ghost-list");
@@ -684,10 +746,8 @@ function buildPicker(id,sel,cb){
 }
 buildPicker("pickA",selA,v=>{selA=v;});
 buildPicker("pickB",selB,v=>{selB=v;});
-// URL 파라미터 확인 (파티 초대 링크로 들어온 경우)
 window.addEventListener('load', () => {
   checkURLPartner();
-  // URL에 파티원 정보 있으면 파티 시너지 탭으로 자동 이동
   if (getURLPartner()) setTimeout(() => sw(5), 300);
 });
 
@@ -713,11 +773,7 @@ async function submitFb(){
   setStar(0);
 }
 
-// ═══════════════════════════════════════════
-// 팔자길드 전투 시스템 v1.0
-// ═══════════════════════════════════════════
-
-// 일진 계산
+// ── 전투 로직
 const STEMS = ["甲","乙","丙","丁","戊","己","庚","辛","壬","癸"];
 const STEM_EL = {甲:"목",乙:"목",丙:"화",丁:"화",戊:"토",己:"토",庚:"금",辛:"금",壬:"수",癸:"수"};
 const BRANCHES = ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
@@ -728,88 +784,27 @@ function getDayGanzhi(d){
   return{stem:STEMS[idx%10],branch:BRANCHES[idx%12],el:STEM_EL[STEMS[idx%10]]};
 }
 
-// 오행 → 기신 (극하는 오행이 기신)
-// 나를 극하는 오행 = 기신 (내가 약해지는 오행)
 const KSIN = {목:"금",화:"수",토:"목",금:"화",수:"토"};
-// 내가 극하는 오행 = 용신 후보
 const YONG = {목:"토",화:"금",토:"수",금:"목",수:"화"};
 
-// 귀신 데이터
 const BATTLE_GHOSTS = {
-  토:{
-    name:"무덤귀신(地鬼)", emoji:"⛰️", color:"#a07832",
-    quote:"\"변화를 두려워하는 자여… 이 자리에 영원히 머물러라.\"",
-    appear:"어두운 땅속에서 검은 기운이 천천히 솟아오른다…",
-    hp:65,
-    atk:["변화 공포를 주입한다!","현상 유지의 늪으로 끌어당긴다!","보수적 집착을 강화시킨다!","안주의 중독을 심어놓는다!"],
-    myAtk:["꾸준한 지속력으로 정면 돌파!","현실적 판단으로 땅귀신의 허점을 노린다!","리스크관리로 함정을 피해낸다!","변화의 의지로 사슬을 끊는다!"],
-    win:["⛰️ 무덤귀신이 땅 속으로 스러진다!\n지박령의 사슬이 끊어졌다. 오늘 변화를 두려워하지 마라.","땅귀신의 기운이 소멸한다!\n오늘 당신은 현상 유지를 거부하고 앞으로 나아갈 수 있다."],
-    lose:["💀 무덤귀신의 기운에 압도되었다…\n오늘은 큰 변화보다 안정을 택하며 힘을 아끼자."]
-  },
-  화:{
-    name:"화귀(火鬼)", emoji:"🔥", color:"#c45c3a",
-    quote:"\"네 모든 열정을 태워 잿더미로 만들어주겠다!\"",
-    appear:"허공에서 붉은 불꽃이 소용돌이치며 형체를 갖춘다…",
-    hp:60,
-    atk:["충동 폭탄을 투척한다!","감정 교란 화염을 뿜는다!","과소비 유혹으로 이성을 흐린다!","분노의 불꽃으로 판단력을 태운다!"],
-    myAtk:["냉정한 분석으로 불꽃을 잡는다!","통찰력으로 화귀의 허점을 꿰뚫는다!","차가운 이성으로 열기를 차단한다!","학습된 경험으로 충동을 억제한다!"],
-    win:["🔥 화귀가 불꽃을 잃고 사라진다!\n오늘 충동적인 결정을 피할 수 있다. 냉정함을 유지하라.","화귀의 불꽃이 꺼진다!\n오늘 감정적 소비와 충동을 이겨냈다."],
-    lose:["💀 화귀의 열기에 정신이 흐려진다…\n오늘 중요한 결정은 내일로 미루고, 충동 지출에 주의하자."]
-  },
-  수:{
-    name:"이무기(蛟鬼)", emoji:"🐍", color:"#1a8090",
-    quote:"\"불안의 파도로 너를 집어삼키겠다!\"",
-    appear:"검은 물속에서 거대한 그림자가 꿈틀거리며 솟구친다…",
-    hp:70,
-    atk:["만성 불안을 주입한다!","방향 감각을 흩뜨린다!","현실 도피를 유혹한다!","결정 장애 독을 뿌린다!"],
-    myAtk:["안정된 기운으로 물결을 잠재운다!","지속력으로 이무기의 흐름을 막는다!","현실적 판단으로 허상을 밝힌다!","리스크관리로 불안의 파도를 넘긴다!"],
-    win:["🐍 이무기가 깊은 물속으로 가라앉는다!\n오늘 불안에 흔들리지 마라. 당신의 판단을 믿어라.","물귀신의 소용돌이가 잦아든다!\n오늘 결정 장애 없이 명확하게 선택할 수 있다."],
-    lose:["💀 이무기의 불안 파도에 휩쓸린다…\n오늘은 새로운 도전보다 안정에 집중하고, 큰 결정은 피하자."]
-  },
-  금:{
-    name:"도깨비(鐵鬼)", emoji:"👺", color:"#3a6a9c",
-    quote:"\"날카로운 방망이로 네 의욕을 산산조각 내겠다!\"",
-    appear:"쇠 방망이 소리와 함께 붉은 눈빛의 도깨비가 나타난다…",
-    hp:62,
-    atk:["냉소 방망이를 휘두른다!","비판적 집착을 강화한다!","대인 관계 단절을 유발한다!","자존감을 깎아내린다!"],
-    myAtk:["따뜻한 열정으로 냉기를 녹인다!","창의력으로 방망이를 피해낸다!","대인매력으로 도깨비를 무력화한다!","감성으로 쇠 방망이를 부드럽게 만든다!"],
-    win:["👺 도깨비가 방망이를 떨어뜨리고 도망간다!\n오늘 냉소주의를 이겨냈다. 자신을 믿어라.","도깨비의 쇠 방망이가 녹아내린다!\n오늘 타인의 비판에 흔들리지 않는다."],
-    lose:["💀 도깨비의 차가운 방망이에 의욕이 꺾인다…\n오늘은 타인의 평가보다 내 페이스를 지키는 것에 집중하자."]
-  },
-  목:{
-    name:"청목귀(靑木鬼)", emoji:"🌲", color:"#4a8c5c",
-    quote:"\"우유부단함이라는 덫으로 너를 영원히 묶어두겠다!\"",
-    appear:"숲 속에서 나무 형태의 검은 기운들이 모여든다…",
-    hp:58,
-    atk:["우유부단함의 덫을 설치한다!","인간관계 집착을 심어놓는다!","결단력을 서서히 빼앗는다!","기회를 눈앞에서 사라지게 한다!"],
-    myAtk:["날카로운 분석으로 덫을 끊어낸다!","리스크관리로 함정을 감지한다!","현실적 판단으로 묶인 것을 풀어낸다!","냉철함으로 감정적 집착을 차단한다!"],
-    win:["🌲 청목귀가 숲 속으로 사라진다!\n오늘 결단력이 살아있다. 망설임 없이 행동하라.","나무귀신의 뿌리가 뽑힌다!\n오늘 우유부단함 없이 빠른 결정을 내릴 수 있다."],
-    lose:["💀 청목귀의 덫에 걸렸다…\n오늘은 큰 결정 대신 작은 것부터 빠르게 실행하며 리듬을 찾자."]
-  }
+  토:{name:"무덤귀신(地鬼)",emoji:"⛰️",color:"#a07832",quote:"\"변화를 두려워하는 자여… 이 자리에 영원히 머물러라.\"",appear:"어두운 땅속에서 검은 기운이 천천히 솟아오른다…",hp:65,atk:["변화 공포를 주입한다!","현상 유지의 늪으로 끌어당긴다!","보수적 집착을 강화시킨다!","안주의 중독을 심어놓는다!"],myAtk:["꾸준한 지속력으로 정면 돌파!","현실적 판단으로 땅귀신의 허점을 노린다!","리스크관리로 함정을 피해낸다!","변화의 의지로 사슬을 끊는다!"],win:["⛰️ 무덤귀신이 땅 속으로 스러진다!\n지박령의 사슬이 끊어졌다. 오늘 변화를 두려워하지 마라.","땅귀신의 기운이 소멸한다!\n오늘 당신은 현상 유지를 거부하고 앞으로 나아갈 수 있다."],lose:["💀 무덤귀신의 기운에 압도되었다…\n오늘은 큰 변화보다 안정을 택하며 힘을 아끼자."]},
+  화:{name:"화귀(火鬼)",emoji:"🔥",color:"#c45c3a",quote:"\"네 모든 열정을 태워 잿더미로 만들어주겠다!\"",appear:"허공에서 붉은 불꽃이 소용돌이치며 형체를 갖춘다…",hp:60,atk:["충동 폭탄을 투척한다!","감정 교란 화염을 뿜는다!","과소비 유혹으로 이성을 흐린다!","분노의 불꽃으로 판단력을 태운다!"],myAtk:["냉정한 분석으로 불꽃을 잡는다!","통찰력으로 화귀의 허점을 꿰뚫는다!","차가운 이성으로 열기를 차단한다!","학습된 경험으로 충동을 억제한다!"],win:["🔥 화귀가 불꽃을 잃고 사라진다!\n오늘 충동적인 결정을 피할 수 있다. 냉정함을 유지하라.","화귀의 불꽃이 꺼진다!\n오늘 감정적 소비와 충동을 이겨냈다."],lose:["💀 화귀의 열기에 정신이 흐려진다…\n오늘 중요한 결정은 내일로 미루고, 충동 지출에 주의하자."]},
+  수:{name:"이무기(蛟鬼)",emoji:"🐍",color:"#1a8090",quote:"\"불안의 파도로 너를 집어삼키겠다!\"",appear:"검은 물속에서 거대한 그림자가 꿈틀거리며 솟구친다…",hp:70,atk:["만성 불안을 주입한다!","방향 감각을 흩뜨린다!","현실 도피를 유혹한다!","결정 장애 독을 뿌린다!"],myAtk:["안정된 기운으로 물결을 잠재운다!","지속력으로 이무기의 흐름을 막는다!","현실적 판단으로 허상을 밝힌다!","리스크관리로 불안의 파도를 넘긴다!"],win:["🐍 이무기가 깊은 물속으로 가라앉는다!\n오늘 불안에 흔들리지 마라. 당신의 판단을 믿어라.","물귀신의 소용돌이가 잦아든다!\n오늘 결정 장애 없이 명확하게 선택할 수 있다."],lose:["💀 이무기의 불안 파도에 휩쓸린다…\n오늘은 새로운 도전보다 안정에 집중하고, 큰 결정은 피하자."]},
+  금:{name:"도깨비(鐵鬼)",emoji:"👺",color:"#3a6a9c",quote:"\"날카로운 방망이로 네 의욕을 산산조각 내겠다!\"",appear:"쇠 방망이 소리와 함께 붉은 눈빛의 도깨비가 나타난다…",hp:62,atk:["냉소 방망이를 휘두른다!","비판적 집착을 강화한다!","대인 관계 단절을 유발한다!","자존감을 깎아내린다!"],myAtk:["따뜻한 열정으로 냉기를 녹인다!","창의력으로 방망이를 피해낸다!","대인매력으로 도깨비를 무력화한다!","감성으로 쇠 방망이를 부드럽게 만든다!"],win:["👺 도깨비가 방망이를 떨어뜨리고 도망간다!\n오늘 냉소주의를 이겨냈다. 자신을 믿어라.","도깨비의 쇠 방망이가 녹아내린다!\n오늘 타인의 비판에 흔들리지 않는다."],lose:["💀 도깨비의 차가운 방망이에 의욕이 꺾인다…\n오늘은 타인의 평가보다 내 페이스를 지키는 것에 집중하자."]},
+  목:{name:"청목귀(靑木鬼)",emoji:"🌲",color:"#4a8c5c",quote:"\"우유부단함이라는 덫으로 너를 영원히 묶어두겠다!\"",appear:"숲 속에서 나무 형태의 검은 기운들이 모여든다…",hp:58,atk:["우유부단함의 덫을 설치한다!","인간관계 집착을 심어놓는다!","결단력을 서서히 빼앗는다!","기회를 눈앞에서 사라지게 한다!"],myAtk:["날카로운 분석으로 덫을 끊어낸다!","리스크관리로 함정을 감지한다!","현실적 판단으로 묶인 것을 풀어낸다!","냉철함으로 감정적 집착을 차단한다!"],win:["🌲 청목귀가 숲 속으로 사라진다!\n오늘 결단력이 살아있다. 망설임 없이 행동하라.","나무귀신의 뿌리가 뽑힌다!\n오늘 우유부단함 없이 빠른 결정을 내릴 수 있다."],lose:["💀 청목귀의 덫에 걸렸다…\n오늘은 큰 결정 대신 작은 것부터 빠르게 실행하며 리듬을 찾자."]}
 };
 
-// 오행별 전투 주요 스탯
-// EL_STATS는 기존 코드에서 사용
 const EL_EMOJIS = {목:"🌿",화:"🔥",토:"🏔️",금:"⚔️",수:"💧"};
-
-// 상극 관계
 const CLASH_MAP = {목:["토"],화:["금"],토:["수"],금:["목"],수:["화"]};
 
-// 전투 상태
-let btState = {
-  userName:"", userEl:"토", ghost:null, ghostEl:"",
-  power:{user:0, ghost:0}, win:false,
-  round:0, maxRounds:3, rounds:[], finished:false
-};
-
+let btState = {userName:"",userEl:"토",ghost:null,ghostEl:"",power:{user:0,ghost:0},win:false,round:0,maxRounds:3,rounds:[],finished:false};
 let btElSel = "토";
-let partyMembers = []; // [{name, el}]
+let partyMembers = [];
 const MAX_PARTY = 3;
 
-// 파티원 추가
 function addPartyMember() {
   if (partyMembers.length >= MAX_PARTY) return;
-  const idx = partyMembers.length;
   partyMembers.push({name: "", el: "화"});
   renderPartyMembers();
 }
@@ -833,7 +828,7 @@ function renderPartyMembers() {
         placeholder="이름" value="${m.name}" oninput="partyMembers[${i}].name=this.value">
       <div style="display:flex;gap:3px">${Object.entries(EL).map(([el,info])=>`
         <button onclick="partyMembers[${i}].el='${el}';renderPartyMembers();updateFormationBadge()"
-          title="${el}(${{'목':'木','화':'火','토':'土','금':'金','수':'水'}[el]})"
+          title="${el}"
           style="width:36px;height:36px;border-radius:6px;border:1px solid ${m.el===el?info.bc:' var(--bdr)'};
           background:${m.el===el?info.bg:'var(--sur2)'};color:${m.el===el?info.sc:'var(--txt3)'};
           cursor:pointer;font-size:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px">
@@ -847,13 +842,9 @@ function renderPartyMembers() {
 function updateFormationBadge() {
   const badge = document.getElementById("formation-badge");
   if (!badge || partyMembers.length === 0) { if(badge) badge.style.display="none"; return; }
-  
-  // 오행 카운트 (나 포함)
   const counts = {목:0, 화:0, 토:0, 금:0, 수:0};
   counts[btElSel] = (counts[btElSel]||0) + 1;
   partyMembers.forEach(m => { counts[m.el] = (counts[m.el]||0) + 1; });
-
-  // 포메이션 확인
   const FORM_CHECKS = [
     {name:"오행상생진",emoji:"⭐",grade:"SS",color:"#c0a020",bonus:25,fn:e=>["목","화","토","금","수"].every(el=>e[el]>=1)},
     {name:"화생토 상생 듀오",emoji:"♻️",grade:"A",color:"#4a8c5c",bonus:18,fn:e=>e["화"]>=1&&e["토"]>=1},
@@ -866,7 +857,6 @@ function updateFormationBadge() {
     {name:"금 냉철진",emoji:"🗡️",grade:"B",color:"#3a6a9c",bonus:12,fn:e=>e["금"]>=2},
     {name:"목 개척진",emoji:"🌿",grade:"B",color:"#3a6a9c",bonus:12,fn:e=>e["목"]>=2},
   ];
-  
   const active = FORM_CHECKS.find(f => f.fn(counts));
   if (active) {
     badge.style.display = "block";
@@ -879,38 +869,19 @@ function updateFormationBadge() {
   }
 }
 
-// 파티 전투 보너스 계산
 function calcPartyBonus(userEl, ghostEl) {
-  let bonus = 0;
-  let bonusDesc = [];
-  
+  let bonus = 0; let bonusDesc = [];
   const CLASH_MAP = {목:["토"],화:["금"],토:["수"],금:["목"],수:["화"]};
   const BIRTH_MAP = {목:["수"],화:["목"],토:["화"],금:["토"],수:["금"]};
-  
   partyMembers.forEach(m => {
     if (!m.el) return;
-    // 파티원이 귀신 오행을 극하면 +20
-    if (CLASH_MAP[m.el]?.includes(ghostEl)) {
-      bonus += 20;
-      bonusDesc.push(`${m.name||"파티원"}(${m.el}) 귀신 약점 공격 +20`);
-    }
-    // 파티원이 나를 생해주면 +12
-    else if (BIRTH_MAP[userEl]?.includes(m.el)) {
-      bonus += 12;
-      bonusDesc.push(`${m.name||"파티원"}(${m.el}) 지원 +12`);
-    }
-    // 같은 오행이면 +8
-    else if (m.el === userEl) {
-      bonus += 8;
-      bonusDesc.push(`${m.name||"파티원"}(${m.el}) 동료 +8`);
-    }
+    if (CLASH_MAP[m.el]?.includes(ghostEl)) { bonus += 20; bonusDesc.push(`${m.name||"파티원"}(${m.el}) 약점 공격 +20`); }
+    else if (BIRTH_MAP[userEl]?.includes(m.el)) { bonus += 12; bonusDesc.push(`${m.name||"파티원"}(${m.el}) 지원 +12`); }
+    else if (m.el === userEl) { bonus += 8; bonusDesc.push(`${m.name||"파티원"}(${m.el}) 동료 +8`); }
   });
-
-  // 포메이션 보너스
   const counts = {목:0, 화:0, 토:0, 금:0, 수:0};
   counts[userEl] = 1;
   partyMembers.forEach(m => { counts[m.el] = (counts[m.el]||0) + 1; });
-
   const FORM_CHECKS = [
     {name:"오행상생진",bonus:25,fn:e=>["목","화","토","금","수"].every(el=>e[el]>=1)},
     {name:"화생토 상생 듀오",bonus:18,fn:e=>e["화"]>=1&&e["토"]>=1},
@@ -923,36 +894,24 @@ function calcPartyBonus(userEl, ghostEl) {
     {name:"금 냉철진",bonus:12,fn:e=>e["금"]>=2},
     {name:"목 개척진",bonus:12,fn:e=>e["목"]>=2},
   ];
-  
   const activeForm = FORM_CHECKS.find(f => f.fn(counts));
-  if (activeForm) {
-    bonus += activeForm.bonus;
-    bonusDesc.push(`${activeForm.name} 포메이션 +${activeForm.bonus}`);
-  }
-
+  if (activeForm) { bonus += activeForm.bonus; bonusDesc.push(`${activeForm.name} 포메이션 +${activeForm.bonus}`); }
   return { bonus, desc: bonusDesc };
 }
 
 function initBattle(){
-  partyMembers = [];
-  renderPartyMembers();
-  const today = new Date();
-  const gz = getDayGanzhi(today);
+  partyMembers = []; renderPartyMembers();
+  const today = new Date(); const gz = getDayGanzhi(today);
   document.getElementById("bt-today-info").innerHTML =
-    `오늘 일진: <strong style="color:var(--gold)">${gz.stem}${gz.branch}일 (${gz.el}기운)</strong><br>
-     오늘의 일진을 확인하고 당신의 오행을 선택하면 전투가 시작됩니다.`;
-  buildBtPicker();
-  updateRemainMsg();
+    `오늘 일진: <strong style="color:var(--gold)">${gz.stem}${gz.branch}일 (${gz.el}기운)</strong><br>오늘의 일진을 확인하고 당신의 오행을 선택하면 전투가 시작됩니다.`;
+  buildBtPicker(); updateRemainMsg();
 }
 
 function buildBtPicker(){
   const wrap = document.getElementById("bt-pick");
-  if(!wrap) return;
-  wrap.innerHTML = "";
-  const EL = {목:{e:"🌿",sc:"#4a8c5c",bg:"rgba(74,140,92,.15)",bc:"rgba(74,140,92,.4)"},화:{e:"🔥",sc:"#c45c3a",bg:"rgba(196,92,58,.15)",bc:"rgba(196,92,58,.4)"},토:{e:"🏔️",sc:"#a07832",bg:"rgba(160,120,50,.15)",bc:"rgba(160,120,50,.4)"},금:{e:"⚔️",sc:"#3a6a9c",bg:"rgba(58,106,156,.15)",bc:"rgba(58,106,156,.4)"},수:{e:"💧",sc:"#1a8090",bg:"rgba(26,128,144,.15)",bc:"rgba(26,128,144,.4)"}};
+  if(!wrap) return; wrap.innerHTML = "";
   Object.entries(EL).forEach(([el,info])=>{
-    const btn=document.createElement("button");
-    btn.className="elb"+(el===btElSel?" on":"");
+    const btn=document.createElement("button"); btn.className="elb"+(el===btElSel?" on":"");
     if(el===btElSel){btn.style.background=info.bg;btn.style.borderColor=info.bc;btn.style.color=info.sc;}
     btn.innerHTML=info.e+"<br><span style='font-size:10px'>"+el+"("+{목:"木",화:"火",토:"土",금:"金",수:"水"}[el]+")</span>";
     btn.onclick=()=>{btElSel=el;buildBtPicker();updateGhostPreview();};
@@ -962,22 +921,14 @@ function buildBtPicker(){
 }
 
 function updateGhostPreview(){
-  const today=new Date();
-  const gz=getDayGanzhi(today);
-  const ksinEl=KSIN[btElSel];
-  const todayEl=gz.el;
-  const isEnhanced=(todayEl===ksinEl);
-  const ghost=BATTLE_GHOSTS[ksinEl];
+  const gz=getDayGanzhi(new Date()); const ksinEl=KSIN[btElSel]; const ghost=BATTLE_GHOSTS[ksinEl];
   if(!ghost)return;
-  const txt=`오늘 일진: <strong style="color:var(--gold)">${gz.stem}${gz.branch}일 (${todayEl}기운)</strong><br>
-    내 기신: <strong style="color:${ghost.color}">${ksinEl}(${ghost.emoji}) → ${ghost.name}</strong>${isEnhanced?' <span style="color:#c45c5c;font-size:11px">⚠️ 오늘 기신 강화!</span>':''}`;
-  document.getElementById("bt-today-info").innerHTML=txt;
+  const isEnhanced=(gz.el===ksinEl);
+  document.getElementById("bt-today-info").innerHTML=`오늘 일진: <strong style="color:var(--gold)">${gz.stem}${gz.branch}일 (${gz.el}기운)</strong><br>내 기신: <strong style="color:${ghost.color}">${ksinEl}(${ghost.emoji}) → ${ghost.name}</strong>${isEnhanced?' <span style="color:#c45c5c;font-size:11px">⚠️ 오늘 기신 강화!</span>':''}`;
 }
 
 function updateRemainMsg(){
-  const r=getRemain();
-  const el=document.getElementById("bt-remain-msg");
-  const btn=document.getElementById("bt-start-btn");
+  const r=getRemain(); const el=document.getElementById("bt-remain-msg"); const btn=document.getElementById("bt-start-btn");
   if(r<=0){el.innerHTML='<span style="color:#c45c5c">오늘 전투 횟수를 모두 사용했습니다 (하루 2회 제한)</span>';btn.disabled=true;btn.style.opacity=".4";}
   else{el.innerHTML=`<span style="color:var(--txt2)">오늘 남은 전투: <strong style="color:var(--gold)">${r}회</strong></span>`;btn.disabled=false;btn.style.opacity="1";}
 }
@@ -997,27 +948,14 @@ function rnd(arr){return arr[Math.floor(Math.random()*arr.length)];}
 function startBattle(){
   if(getRemain()<=0)return;
   const name=document.getElementById("bt-name").value.trim()||"용사";
-  const userEl=btElSel;
-  const today=new Date();
-  const gz=getDayGanzhi(today);
-  const ksinEl=KSIN[userEl];
-  const ghost=BATTLE_GHOSTS[ksinEl];
-  const isEnhanced=(gz.el===ksinEl);
-
-  // 전투력 계산
-  const statMap=EL_STATS[userEl]||["통찰력","학습력"];
-  const basePower=65;
-  let mult=1.0;
-  if(CLASH_MAP[userEl]?.includes(ksinEl)) mult=1.5;
-  else if(CLASH_MAP[ksinEl]?.includes(userEl)) mult=0.7;
-  
-  // 파티 보너스 계산
+  const userEl=btElSel; const gz=getDayGanzhi(new Date()); const ksinEl=KSIN[userEl];
+  const ghost=BATTLE_GHOSTS[ksinEl]; const isEnhanced=(gz.el===ksinEl);
+  let mult=1.0; if(CLASH_MAP[userEl]?.includes(ksinEl)) mult=1.5; else if(CLASH_MAP[ksinEl]?.includes(userEl)) mult=0.7;
   const partyResult = calcPartyBonus(userEl, ksinEl);
-  const userPower=Math.round(basePower*mult) + partyResult.bonus;
+  const userPower=Math.round(65*mult) + partyResult.bonus;
   const ghostPower=ghost.hp+(isEnhanced?12:0);
   const win=userPower>ghostPower;
 
-  // 라운드 텍스트 생성
   const rounds=[
     {title:`1라운드 — ${ghost.name} 의 공격!`, enemy:rnd(ghost.atk), mine:rnd(ghost.myAtk), emoji:ghost.emoji},
     {title:`2라운드 — ${name}의 반격!`, enemy:rnd(ghost.atk), mine:rnd(ghost.myAtk), emoji:EL_EMOJIS[userEl]},
@@ -1026,346 +964,147 @@ function startBattle(){
 
   btState={userName:name,userEl,ghost,ghostEl:ksinEl,power:{user:userPower,ghost:ghostPower},win,round:0,maxRounds:3,rounds,finished:false};
   useFight();
-
-  document.getElementById("bt-setup").style.display="none";
-  document.getElementById("bt-fight").style.display="block";
-  document.getElementById("bt-result").style.display="none";
-
-  // 귀신 등장
-  document.getElementById("bt-ghost-emoji").textContent=ghost.emoji;
-  document.getElementById("bt-ghost-name").textContent=ghost.name;
-  
+  document.getElementById("bt-setup").style.display="none"; document.getElementById("bt-fight").style.display="block"; document.getElementById("bt-result").style.display="none";
+  document.getElementById("bt-ghost-emoji").textContent=ghost.emoji; document.getElementById("bt-ghost-name").textContent=ghost.name;
   let partyBonusHtml = "";
-  if(partyResult.bonus > 0) {
-    partyBonusHtml = `<div style="margin-top:8px;padding:6px 10px;background:rgba(74,140,92,.1);border-radius:6px;border:1px solid rgba(74,140,92,.3);font-size:11px;color:#5aaa78">
-      🛡️ 파티 전투력 보너스 +${partyResult.bonus}<br>
-      ${partyResult.desc.map(d=>`<span style="opacity:.8">· ${d}</span>`).join("<br>")}
-    </div>`;
-  }
-  
-  document.getElementById("bt-ghost-quote").innerHTML=`
-    <div style="color:var(--txt2);margin-bottom:.5rem">${ghost.appear}</div>
-    <div style="color:${ghost.color};margin-bottom:6px">${ghost.quote}</div>
-    <div style="font-size:11px;color:var(--txt2)">
-      ⚔️ 내 전투력: <strong style="color:${win?"#5aaa78":"#c45c5c"}">${userPower}</strong>
-      &nbsp;vs&nbsp; 👹 귀신: <strong>${ghostPower}</strong>
-    </div>
-    ${partyBonusHtml}`;
-  document.getElementById("bt-rounds").innerHTML="";
-  document.getElementById("bt-fight-btn").textContent="▶ 전투 시작";
+  if(partyResult.bonus > 0) partyBonusHtml = `<div style="margin-top:8px;padding:6px 10px;background:rgba(74,140,92,.1);border-radius:6px;border:1px solid rgba(74,140,92,.3);font-size:11px;color:#5aaa78">🛡️ 파티 전투력 보너스 +${partyResult.bonus}<br>${partyResult.desc.map(d=>`<span style="opacity:.8">· ${d}</span>`).join("<br>")}</div>`;
+  document.getElementById("bt-ghost-quote").innerHTML=`<div style="color:var(--txt2);margin-bottom:.5rem">${ghost.appear}</div><div style="color:${ghost.color};margin-bottom:6px">${ghost.quote}</div><div style="font-size:11px;color:var(--txt2)">⚔️ 내 전투력: <strong style="color:${win?"#5aaa78":"#c45c5c"}">${userPower}</strong> &nbsp;vs&nbsp; 👹 귀신: <strong>${ghostPower}</strong></div>${partyBonusHtml}`;
+  document.getElementById("bt-rounds").innerHTML=""; document.getElementById("bt-fight-btn").textContent="▶ 전투 시작";
 }
 
-let btRound=0;
 function nextRound(){
-  const btn=document.getElementById("bt-fight-btn");
-  const roundsEl=document.getElementById("bt-rounds");
-
+  const btn=document.getElementById("bt-fight-btn"); const roundsEl=document.getElementById("bt-rounds");
   if(btState.round<btState.maxRounds){
-    const r=btState.rounds[btState.round];
-    const card=document.createElement("div");
+    const r=btState.rounds[btState.round]; const card=document.createElement("div");
     card.style.cssText="background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;padding:.75rem 1rem;margin-bottom:8px;animation:fadeIn .3s ease";
-    card.innerHTML=`<div style="font-size:11px;color:var(--gold);margin-bottom:6px;font-weight:500">${r.title}</div>
-      <div style="font-size:12px;color:#c45c5c;margin-bottom:5px">👹 ${r.enemy}</div>
-      <div style="font-size:12px;color:#5aaa78">${r.emoji} ${r.mine}</div>`;
-    roundsEl.appendChild(card);
-    btState.round++;
-
-    if(btState.round>=btState.maxRounds){btn.textContent="▶ 결과 확인";}
-    else{btn.textContent="▶ 다음";}
-  } else {
-    showBattleResult();
-  }
+    card.innerHTML=`<div style="font-size:11px;color:var(--gold);margin-bottom:6px;font-weight:500">${r.title}</div><div style="font-size:12px;color:#c45c5c;margin-bottom:5px">👹 ${r.enemy}</div><div style="font-size:12px;color:#5aaa78">${r.emoji} ${r.mine}</div>`;
+    roundsEl.appendChild(card); btState.round++;
+    if(btState.round>=btState.maxRounds){btn.textContent="▶ 결과 확인";}else{btn.textContent="▶ 다음";}
+  } else { showBattleResult(); }
 }
 
 function showBattleResult(){
-  document.getElementById("bt-fight").style.display="none";
-  document.getElementById("bt-result").style.display="block";
-
-  const{win,ghost,ghostEl,userEl,power,userName}=btState;
-  const gc=win?"#4a8c5c":"#c45c5c";
-
+  document.getElementById("bt-fight").style.display="none"; document.getElementById("bt-result").style.display="block";
+  const{win,ghost,userEl}=btState; const gc=win?"#4a8c5c":"#c45c5c";
   document.getElementById("bt-result-emoji").textContent=win?"🏆":"💀";
   document.getElementById("bt-result-title").innerHTML=`<span style="color:${gc}">${win?"승리! 귀신을 물리쳤다":"패배... 귀신에게 압도되었다"}</span>`;
   document.getElementById("bt-result-desc").textContent=win?rnd(ghost.win):rnd(ghost.lose);
-
-  const buffList=win?
-    (EL_STATS[userEl]||[]).map(s=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid var(--bdr)"><span>${s}</span><span style="color:#5aaa78;font-weight:700">+15 (오늘 한정)</span></div>`).join(""):
-    `<div style="font-size:13px;color:#c45c5c;text-align:center;padding:.5rem 0">오늘 주요 스탯 -8 (오늘 한정)</div>`;
-
-  document.getElementById("bt-buffs").innerHTML=`
-    <div style="font-size:11px;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">오늘의 능력치 변화</div>
-    ${buffList}
-    <div style="font-size:11px;color:var(--txt3);margin-top:8px">※ 세션 종료 시 초기화됩니다</div>`;
-
+  const buffList=win?(EL_STATS[userEl]||[]).map(s=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid var(--bdr)"><span>${s}</span><span style="color:#5aaa78;font-weight:700">+15 (오늘 한정)</span></div>`).join("") : `<div style="font-size:13px;color:#c45c5c;text-align:center;padding:.5rem 0">오늘 주요 스탯 -8 (오늘 한정)</div>`;
+  document.getElementById("bt-buffs").innerHTML=`<div style="font-size:11px;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">오늘의 능력치 변화</div>${buffList}<div style="font-size:11px;color:var(--txt3);margin-top:8px">※ 세션 종료 시 초기화됩니다</div>`;
   const remain=getRemain();
-  document.getElementById("bt-remain-final").innerHTML=remain>0?
-    `⚔️ 오늘 남은 전투: <strong style="color:var(--gold)">${remain}회</strong>`:
-    `오늘 전투를 모두 마쳤습니다. 내일 다시 도전하세요!`;
+  document.getElementById("bt-remain-final").innerHTML=remain>0?`⚔️ 오늘 남은 전투: <strong style="color:var(--gold)">${remain}회</strong>`:`오늘 전투를 모두 마쳤습니다. 내일 다시 도전하세요!`;
 }
 
 function resetBattle(){
-  document.getElementById("bt-setup").style.display="block";
-  document.getElementById("bt-fight").style.display="none";
-  document.getElementById("bt-result").style.display="none";
-  btState.round=0;
-  document.getElementById("bt-rounds").innerHTML="";
-  updateRemainMsg();
+  document.getElementById("bt-setup").style.display="block"; document.getElementById("bt-fight").style.display="none"; document.getElementById("bt-result").style.display="none";
+  btState.round=0; document.getElementById("bt-rounds").innerHTML=""; updateRemainMsg();
 }
 
-// fadeIn 애니메이션
 const battleStyle=document.createElement("style");
 battleStyle.textContent="@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}";
 document.head.appendChild(battleStyle);
 
 
-// ═══════════════════════════════════
-// 사주 풀이 시스템 (Gemini API)
-// ═══════════════════════════════════
-
+// ── 기존 사주 풀이 (보존) ──
 let sajuLoaded = false;
-
-function goToSajuPulii() {
-  sw(1);
-}
-
+function goToSajuPulii() { sw(1); }
 function swSaju(i) {
-  ["st0","st1","st2","st3"].forEach((id,j) => {
-    const btn = document.getElementById(id);
-    if(btn) btn.classList.toggle("on", j===i);
-  });
-  ["sp0","sp1","sp2","sp3"].forEach((id,j) => {
-    const el = document.getElementById(id);
-    if(el) el.style.display = j===i ? "block" : "none";
-  });
+  ["st0","st1","st2","st3"].forEach((id,j) => { const btn = document.getElementById(id); if(btn) btn.classList.toggle("on", j===i); });
+  ["sp0","sp1","sp2","sp3"].forEach((id,j) => { const el = document.getElementById(id); if(el) el.style.display = j===i ? "block" : "none"; });
 }
 
 async function initSajuPulii() {
-  if(!lastResult) {
-    document.getElementById("saju-locked").style.display="block";
-    document.getElementById("saju-result").style.display="none";
-    return;
-  }
+  if(!lastResult) { document.getElementById("saju-locked").style.display="block"; document.getElementById("saju-result").style.display="none"; return; }
   document.getElementById("saju-locked").style.display="none";
-
-  if(sajuLoaded) return; // 이미 로딩됨
-  sajuLoaded = true;
-
-  document.getElementById("saju-loading").style.display="block";
-  document.getElementById("saju-result").style.display="none";
-
+  if(sajuLoaded) return; sajuLoaded = true;
+  document.getElementById("saju-loading").style.display="block"; document.getElementById("saju-result").style.display="none";
   try {
-    const resp = await fetch('/api/saju', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        name: lastResult.name,
-        pillars: lastResult.pillars,
-        ilgan: lastResult.ilgan,
-        ilgan_element: lastResult.ilgan_element,
-        ohaeng: null,
-        geokguk: lastResult.geokguk,
-        gender: gender
-      })
-    });
+    const resp = await fetch('/api/saju', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name: lastResult.name, pillars: lastResult.pillars, ilgan: lastResult.ilgan, ilgan_element: lastResult.ilgan_element, ohaeng: null, geokguk: lastResult.geokguk, gender: gender }) });
     const json = await resp.json();
     if(!json.success) throw new Error(json.error || '풀이 실패');
     renderSajuResult(json);
   } catch(e) {
     document.getElementById("saju-loading").style.display="none";
-    document.getElementById("saju-locked").innerHTML = `
-      <div style="font-size:13px;color:#c45c5c;text-align:center;padding:1rem">오류: ${e.message}</div>
-      <button class="btn-ghost" style="margin-top:8px" onclick="sajuLoaded=false;initSajuPulii()">다시 시도</button>`;
+    document.getElementById("saju-locked").innerHTML = `<div style="font-size:13px;color:#c45c5c;text-align:center;padding:1rem">오류: ${e.message}</div><button class="btn-ghost" style="margin-top:8px" onclick="sajuLoaded=false;initSajuPulii()">다시 시도</button>`;
     document.getElementById("saju-locked").style.display="block";
   }
 }
 
 function renderSajuResult(json) {
-  document.getElementById("saju-loading").style.display="none";
-  document.getElementById("saju-result").style.display="block";
-
-  const {chartData, sections} = json;
-  const cd = chartData || {};
-
-  // ─ 페르소나 카드
-  const persona = cd.persona || {};
-  const pEl = document.getElementById("saju-persona");
-  // sections[4]에서 페르소나 타이틀 추출 시도
+  document.getElementById("saju-loading").style.display="none"; document.getElementById("saju-result").style.display="block";
+  const {chartData, sections} = json; const cd = chartData || {};
+  const persona = cd.persona || {}; const pEl = document.getElementById("saju-persona");
   const sec4 = sections && sections['4'] ? sections['4'] : '';
   const titleFromSec = sec4.match(/페르소나[:\s]+([^\n]+)/)?.[1] || '';
   const displayTitle = persona.title || titleFromSec || (sec4 ? sec4.slice(0,40) : '');
-  if(pEl) pEl.innerHTML = `
-    <div class="ch">
-      <div style="font-family:'Noto Serif KR',serif;font-size:18px;color:var(--gold);margin-bottom:4px">${displayTitle||'분석 중...'}</div>
-      <div style="font-size:12px;color:var(--txt2)">${persona.mbti||''}</div>
-    </div>
-    <div class="cb">${(persona.receipt_hashtags||[]).map(h=>'<span style="font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid rgba(212,168,71,.3);color:var(--gdim);margin:2px;display:inline-block">'+h+'</span>').join('')||'<div style="font-size:11px;color:var(--txt3)">섹션 [4] 내용을 심층분석 탭에서 확인하세요</div>'}</div>`;
-
-  // ─ 레이더 차트 (SVG 기반)
+  if(pEl) pEl.innerHTML = `<div class="ch"><div style="font-family:'Noto Serif KR',serif;font-size:18px;color:var(--gold);margin-bottom:4px">${displayTitle||'분석 중...'}</div><div style="font-size:12px;color:var(--txt2)">${persona.mbti||''}</div></div><div class="cb">${(persona.receipt_hashtags||[]).map(h=>'<span style="font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid rgba(212,168,71,.3);color:var(--gdim);margin:2px;display:inline-block">'+h+'</span>').join('')||'<div style="font-size:11px;color:var(--txt3)">섹션 [4] 내용을 심층분석 탭에서 확인하세요</div>'}</div>`;
   renderRadarSVG(cd.hexagon_scores);
-
-  // ─ 재물 트렌드 (SVG 막대)
   renderBarSVG("wealthChart", cd.wealth_trend?.scores||[], cd.wealth_trend?.labels||[], "#d4a847");
-
-  // ─ 월별 현금흐름 (SVG 막대)
-  const cfScores = cd.monthly_cashflow?.scores||[];
-  const cfLabels = cd.monthly_cashflow?.labels||[];
+  const cfScores = cd.monthly_cashflow?.scores||[]; const cfLabels = cd.monthly_cashflow?.labels||[];
   renderBarSVG("cashflowChart", cfScores, cfLabels, null, true);
-
-  // 잭팟/크래시 표시
   if(cfScores.length) {
-    const maxI = cfScores.indexOf(Math.max(...cfScores));
-    const minI = cfScores.indexOf(Math.min(...cfScores));
+    const maxI = cfScores.indexOf(Math.max(...cfScores)); const minI = cfScores.indexOf(Math.min(...cfScores));
     const lgEl = document.getElementById("cashflow-legend");
     if(lgEl) lgEl.innerHTML = `🟢 잭팟: ${cfLabels[maxI]||''} (${cfScores[maxI]}) &nbsp; 🔴 주의: ${cfLabels[minI]||''} (${cfScores[minI]})`;
   }
-
-  // ─ 섹션 렌더링
-  const ST = {'1':'📋 명식 검증','4':'👤 본질 페르소나','6':'🎭 운명의 도플갱어',
-    '7':'💰 재산 시뮬레이션','9':'👨‍👩‍👧 부모운 & 관계 리스크',
-    '10':'📈 대운 서사','11':'📊 단기 자산 흐름','12':'✅ Executive Summary'};
-
+  const ST = {'1':'📋 명식 검증','4':'👤 본질 페르소나','6':'🎭 운명의 도플갱어','7':'💰 재산 시뮬레이션','9':'👨‍👩‍👧 부모운 & 관계 리스크','10':'📈 대운 서사','11':'📊 단기 자산 흐름','12':'✅ Executive Summary'};
   function md2html(text) {
     if(!text) return '';
-    return text
-      .replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--gold)">$1</strong>')
+    return text.replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--gold)">$1</strong>')
       .replace(/^> (.+)/gm,'<div style="border-left:3px solid var(--gdim);padding:4px 10px;margin:4px 0;color:var(--txt2);font-style:italic;background:rgba(212,168,71,.05);border-radius:0 6px 6px 0">$1</div>')
       .replace(/^\| .+ \|$/gm, row => {
         const cells = row.split('|').map(s=>s.trim()).filter(s=>s&&!s.match(/^[-:]+$/));
         if(!cells.length) return '';
         return '<div style="display:flex;gap:4px;flex-wrap:wrap;margin:3px 0">'+cells.map(cell=>'<span style="display:inline-block;padding:3px 8px;border:1px solid var(--bdr);border-radius:4px;font-size:11px;background:var(--sur2)">'+cell+'</span>').join('')+'</div>';
-      })
-      .replace(/^(\d+\..+)/gm,'<div style="padding:3px 0;font-size:12px">$1</div>');
+      }).replace(/^(\d+\..+)/gm,'<div style="padding:3px 0;font-size:12px">$1</div>');
   }
-
   function renderSection(ids, targetId) {
     const html = ids.map(id => {
       if(!sections||!sections[id]) return '';
-      return '<div class="cb" style="border-bottom:1px solid var(--bdr)">'+
-        '<div style="font-size:11px;color:var(--gdim);font-weight:500;margin-bottom:8px">'+(ST[id]||'['+id+']')+'</div>'+
-        '<div style="font-size:12px;color:var(--txt);line-height:1.9">'+md2html(sections[id])+'</div>'+
-        '</div>';
+      return '<div class="cb" style="border-bottom:1px solid var(--bdr)"><div style="font-size:11px;color:var(--gdim);font-weight:500;margin-bottom:8px">'+(ST[id]||'['+id+']')+'</div><div style="font-size:12px;color:var(--txt);line-height:1.9">'+md2html(sections[id])+'</div></div>';
     }).join('');
     const el = document.getElementById(targetId);
     if(el) el.innerHTML = '<div>'+(html||'<div class="cb" style="color:var(--txt3);font-size:12px">내용을 불러오는 중...</div>')+'</div>';
   }
-
-  renderSection(['1','4','6','9'], 'saju-deep');
-  renderSection(['7','10','11'], 'saju-wealth');
-  renderSection(['12'], 'saju-action');
-
-  // ─ 영수증
+  renderSection(['1','4','6','9'], 'saju-deep'); renderSection(['7','10','11'], 'saju-wealth'); renderSection(['12'], 'saju-action');
   const receipt = (sections&&sections['13']) ? sections['13'] : '';
   const rEl = document.getElementById("saju-receipt");
   if(rEl) {
     const receiptContent = receipt || (json.raw ? json.raw.slice(json.raw.lastIndexOf('🧾')>0?json.raw.lastIndexOf('🧾'):json.raw.length-200) : '');
-    rEl.innerHTML = `
-    <div class="ch"><div style="font-size:13px;font-weight:500">🧾 운명 요약 영수증</div><div style="font-size:11px;color:var(--txt2);margin-top:2px">인스타그램 공유용</div></div>
-    <div class="cb">
-      <div style="font-size:12px;line-height:1.9;background:var(--sur2);border-radius:8px;padding:.75rem">${md2html(receiptContent)||'영수증 생성 중...'}</div>
-      <button class="btn" style="margin-top:10px" onclick="copyReceipt()">📋 영수증 복사</button>
-    </div>`;
+    rEl.innerHTML = `<div class="ch"><div style="font-size:13px;font-weight:500">🧾 운명 요약 영수증</div><div style="font-size:11px;color:var(--txt2);margin-top:2px">인스타그램 공유용</div></div><div class="cb"><div style="font-size:12px;line-height:1.9;background:var(--sur2);border-radius:8px;padding:.75rem">${md2html(receiptContent)||'영수증 생성 중...'}</div><button class="btn" style="margin-top:10px" onclick="copyReceipt()">📋 영수증 복사</button></div>`;
   }
 }
 
-// SVG 레이더 차트
 function renderRadarSVG(hexScores) {
   const el = document.getElementById("saju-radar-svg");
   if(!el) return;
   if(!hexScores||!hexScores.base) { el.innerHTML='<div style="color:var(--txt3);font-size:12px;text-align:center;padding:1rem">차트 데이터 없음</div>'; return; }
-
   const labels=["재물","직업","관계","건강","리스크","잠재력"];
-  const sets=[
-    {data:hexScores.worst, color:"rgba(196,92,58,.7)", fill:"rgba(196,92,58,.1)"},
-    {data:hexScores.base, color:"rgba(212,168,71,.9)", fill:"rgba(212,168,71,.15)"},
-    {data:hexScores.best, color:"rgba(74,140,92,.7)", fill:"rgba(74,140,92,.12)"}
-  ];
-  const cx=140,cy=140,r=100,n=6;
-
-  // 배경 육각형들
-  let bg='';
+  const sets=[{data:hexScores.worst, color:"rgba(196,92,58,.7)", fill:"rgba(196,92,58,.1)"},{data:hexScores.base, color:"rgba(212,168,71,.9)", fill:"rgba(212,168,71,.15)"},{data:hexScores.best, color:"rgba(74,140,92,.7)", fill:"rgba(74,140,92,.12)"}];
+  const cx=140,cy=140,r=100,n=6; let bg='';
   [20,40,60,80,100].forEach(pct => {
-    const pts=Array.from({length:n},(_,i)=>{
-      const a=Math.PI/2+i*(2*Math.PI/n);
-      const rr=r*(pct/100);
-      return `${cx+rr*Math.cos(a)},${cy-rr*Math.sin(a)}`;
-    }).join(' ');
+    const pts=Array.from({length:n},(_,i)=>{ const a=Math.PI/2+i*(2*Math.PI/n); const rr=r*(pct/100); return `${cx+rr*Math.cos(a)},${cy-rr*Math.sin(a)}`; }).join(' ');
     bg+=`<polygon points="${pts}" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="1"/>`;
   });
-
-  // 축선
-  let axes='';
-  for(let i=0;i<n;i++){
-    const a=Math.PI/2+i*(2*Math.PI/n);
-    axes+=`<line x1="${cx}" y1="${cy}" x2="${cx+r*Math.cos(a)}" y2="${cy-r*Math.sin(a)}" stroke="rgba(255,255,255,.08)" stroke-width="1"/>`;
-  }
-
-  // 데이터 폴리곤
-  let polys='';
-  sets.forEach(s=>{
-    const pts=s.data.map((v,i)=>{
-      const a=Math.PI/2+i*(2*Math.PI/n);
-      const rr=r*(Math.min(v,100)/100);
-      return `${cx+rr*Math.cos(a)},${cy-rr*Math.sin(a)}`;
-    }).join(' ');
-    polys+=`<polygon points="${pts}" fill="${s.fill}" stroke="${s.color}" stroke-width="2"/>`;
-  });
-
-  // 레이블
-  let lbls='';
-  labels.forEach((lb,i)=>{
-    const a=Math.PI/2+i*(2*Math.PI/n);
-    const lx=cx+(r+22)*Math.cos(a), ly=cy-(r+22)*Math.sin(a);
-    const anchor=lx<cx-5?'end':lx>cx+5?'start':'middle';
-    const score=hexScores.base[i]||0;
-    lbls+=`<text x="${lx}" y="${ly}" text-anchor="${anchor}" dominant-baseline="central" font-size="10" fill="#9a9488">${lb}</text>`;
-    lbls+=`<text x="${lx}" y="${ly+13}" text-anchor="${anchor}" dominant-baseline="central" font-size="9" fill="rgba(212,168,71,.8)">${score}</text>`;
-  });
-
-  el.innerHTML=`<svg viewBox="0 0 280 280" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:280px">${bg}${axes}${polys}${lbls}
-    <text x="15" y="268" font-size="8" fill="rgba(196,92,58,.7)">■ Worst</text>
-    <text x="60" y="268" font-size="8" fill="rgba(212,168,71,.9)">■ Base</text>
-    <text x="105" y="268" font-size="8" fill="rgba(74,140,92,.7)">■ Best</text>
-  </svg>`;
+  let axes=''; for(let i=0;i<n;i++){ const a=Math.PI/2+i*(2*Math.PI/n); axes+=`<line x1="${cx}" y1="${cy}" x2="${cx+r*Math.cos(a)}" y2="${cy-r*Math.sin(a)}" stroke="rgba(255,255,255,.08)" stroke-width="1"/>`; }
+  let polys=''; sets.forEach(s=>{ const pts=s.data.map((v,i)=>{ const a=Math.PI/2+i*(2*Math.PI/n); const rr=r*(Math.min(v,100)/100); return `${cx+rr*Math.cos(a)},${cy-rr*Math.sin(a)}`; }).join(' '); polys+=`<polygon points="${pts}" fill="${s.fill}" stroke="${s.color}" stroke-width="2"/>`; });
+  let lbls=''; labels.forEach((lb,i)=>{ const a=Math.PI/2+i*(2*Math.PI/n); const lx=cx+(r+22)*Math.cos(a), ly=cy-(r+22)*Math.sin(a); const anchor=lx<cx-5?'end':lx>cx+5?'start':'middle'; const score=hexScores.base[i]||0; lbls+=`<text x="${lx}" y="${ly}" text-anchor="${anchor}" dominant-baseline="central" font-size="10" fill="#9a9488">${lb}</text><text x="${lx}" y="${ly+13}" text-anchor="${anchor}" dominant-baseline="central" font-size="9" fill="rgba(212,168,71,.8)">${score}</text>`; });
+  el.innerHTML=`<svg viewBox="0 0 280 280" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:280px">${bg}${axes}${polys}${lbls}<text x="15" y="268" font-size="8" fill="rgba(196,92,58,.7)">■ Worst</text><text x="60" y="268" font-size="8" fill="rgba(212,168,71,.9)">■ Base</text><text x="105" y="268" font-size="8" fill="rgba(74,140,92,.7)">■ Best</text></svg>`;
 }
 
-// SVG 막대 차트
 function renderBarSVG(targetId, scores, labels, color, useGradient) {
   const el = document.getElementById(targetId);
   if(!el||!scores.length) return;
-
-  const W=300, H=140, pad=30, bw=Math.floor((W-pad*2)/scores.length)-2;
-  const max=Math.max(...scores,1);
-
-  let bars='';
-  scores.forEach((v,i)=>{
-    const bh=Math.round(((H-30)*v/max));
-    const x=pad+i*(bw+2);
-    const y=H-20-bh;
-    const c=useGradient?(v>=70?'rgba(74,140,92,.8)':v<=40?'rgba(196,92,58,.8)':'rgba(58,106,156,.6)'):(color||'#d4a847');
-    bars+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="2" fill="${c}"/>`;
-    if(labels[i]&&scores.length<=12) {
-      bars+=`<text x="${x+bw/2}" y="${H-6}" text-anchor="middle" font-size="8" fill="#5a5650">${labels[i].replace('월','').replace('대','')}</text>`;
-    }
-  });
-
-  // Y축 점선
-  let ylines='';
-  [25,50,75,100].forEach(pct=>{
-    const y=H-20-Math.round((H-30)*pct/100);
-    ylines+=`<line x1="${pad}" y1="${y}" x2="${W-10}" y2="${y}" stroke="rgba(255,255,255,.04)" stroke-width="1" stroke-dasharray="2,2"/>`;
-    ylines+=`<text x="${pad-4}" y="${y}" text-anchor="end" dominant-baseline="central" font-size="7" fill="#3a3a38">${pct}</text>`;
-  });
-
+  const W=300, H=140, pad=30, bw=Math.floor((W-pad*2)/scores.length)-2; const max=Math.max(...scores,1);
+  let bars=''; scores.forEach((v,i)=>{ const bh=Math.round(((H-30)*v/max)); const x=pad+i*(bw+2); const y=H-20-bh; const c=useGradient?(v>=70?'rgba(74,140,92,.8)':v<=40?'rgba(196,92,58,.8)':'rgba(58,106,156,.6)'):(color||'#d4a847'); bars+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="2" fill="${c}"/>`; if(labels[i]&&scores.length<=12) { bars+=`<text x="${x+bw/2}" y="${H-6}" text-anchor="middle" font-size="8" fill="#5a5650">${labels[i].replace('월','').replace('대','')}</text>`; } });
+  let ylines=''; [25,50,75,100].forEach(pct=>{ const y=H-20-Math.round((H-30)*pct/100); ylines+=`<line x1="${pad}" y1="${y}" x2="${W-10}" y2="${y}" stroke="rgba(255,255,255,.04)" stroke-width="1" stroke-dasharray="2,2"/><text x="${pad-4}" y="${y}" text-anchor="end" dominant-baseline="central" font-size="7" fill="#3a3a38">${pct}</text>`; });
   el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%">${ylines}${bars}</svg>`;
 }
 
 function copyReceipt() {
   const el = document.getElementById("saju-receipt");
   const text = el?.innerText || '';
-  navigator.clipboard.writeText(text).then(()=>{
-    const btn = el.querySelector('button');
-    if(btn){btn.textContent='✅ 복사됨!';setTimeout(()=>{btn.textContent='📋 영수증 복사';},2000);}
-  });
+  navigator.clipboard.writeText(text).then(()=>{ const btn = el.querySelector('button'); if(btn){btn.textContent='✅ 복사됨!';setTimeout(()=>{btn.textContent='📋 영수증 복사';},2000);} });
 }
 
 </script>
