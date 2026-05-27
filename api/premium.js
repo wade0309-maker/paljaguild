@@ -1,4 +1,4 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const Anthropic = require('@anthropic-ai/sdk');
 const { calcBazi, generateGeminiPayload } = require('../lib/baziEngine');
 
 const SYSTEM_PROMPT = `
@@ -27,7 +27,7 @@ const SYSTEM_PROMPT = `
 \`\`\`
 ### [1] 명식 데이터 검증 요약
 ### [2] 운명의 3중 육각형 능력치 (Worst / Base / Best)
-### [3] 가족 통합 대시보드
+### [3] 가족 통합 대시보드 (1인 입력 시 생략)
 ### [4] 본질과 현실 페르소나
 ### [5] 네이밍 시너지 (성명학)
 ### [6] 운명의 도플갱어 (역사적 평행이론)
@@ -55,25 +55,33 @@ module.exports = async function handler(req, res) {
       input.lon || 126.97, input.gender
     );
     
-    // 2. Gemini용 데이터 페이로드 생성
-    const geminiPayload = generateGeminiPayload(input, baziResult);
+    // 2. AI용 데이터 페이로드 생성
+    const payloadString = generateGeminiPayload(input, baziResult);
 
-    // 3. Gemini API 통신
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-pro",
-      systemInstruction: SYSTEM_PROMPT,
-      generationConfig: { temperature: 0.2 },
+    // 3. Anthropic (Claude) API 통신
+    const anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY, // Vercel 환경 변수
     });
 
-    const result = await model.generateContent(geminiPayload);
-    const textResponse = result.response.text();
+    const msg = await anthropic.messages.create({
+      model: "claude-3-5-sonnet-20241022", // 최신 3.5 Sonnet 모델
+      max_tokens: 4000,
+      temperature: 0.2,
+      system: SYSTEM_PROMPT, // 클로드는 시스템 프롬프트를 따로 받습니다.
+      messages: [
+        {
+          role: "user",
+          content: `다음 내담자의 명식 데이터를 바탕으로 완벽한 프리미엄 리포트를 작성해줘. JSON 코드 블록을 반드시 가장 먼저 출력해.\n\n${payloadString}`
+        }
+      ]
+    });
 
     // 4. 완료된 분석 리포트를 반환
+    const textResponse = msg.content[0].text;
     return res.status(200).json({ result: textResponse });
 
   } catch (error) {
-    console.error("API Error:", error);
-    return res.status(500).json({ error: "분석 중 오류가 발생했습니다." });
+    console.error("Anthropic API Error:", error);
+    return res.status(500).json({ error: "분석 중 오류가 발생했습니다.", details: error.message });
   }
 };
